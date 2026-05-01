@@ -1,0 +1,52 @@
+
+# ─── Application Configuration ───────────────────────────────────────────────
+app:
+  name: "AI Sports & Fitness Intelligence System"
+  version: "1.0.0"
+  debug: true
+
+# ─── FastAPI Backend ──────────────────────────────────────────────────────────
+backend:
+  host: "127.0.0.1"
+  port: 8000
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+database:
+  path: "database/fitness.db"
+
+# ─── MediaPipe Pose Detection ─────────────────────────────────────────────────
+mediapipe:
+  min_detection_confidence: 0.7
+  min_tracking_confidence:  0.7
+  model_complexity: 1        # 0=lite | 1=full | 2=heavy
+
+# ─── Exercise Angle Thresholds ────────────────────────────────────────────────
+exercises:
+  squat:
+    down_angle:      90    # knee angle < this → "DOWN" position
+    up_angle:       160    # knee angle > this → "UP"  position
+    back_angle_max:  50    # torso lean max (degrees from vertical)
+  pushup:
+    down_angle:  90
+    up_angle:   160
+  jumping_jack:
+    arms_up_angle:   150   # shoulder abduction angle when arms are raised
+    arms_down_angle:  40   # shoulder abduction angle when arms are lowered
+    legs_out_ratio:  0.35  # ankle_width / shoulder_width > this → legs spread
+
+# ─── BMI Thresholds (WHO) ─────────────────────────────────────────────────────
+bmi:
+  underweight: 18.5
+  normal:      24.9
+  overweight:  29.9
+  # ≥ 30.0 → Obese
+
+# ─── Body Proportion Heuristics ──────────────────────────────────────────────
+body_proportions:
+  shoulder_hip_lean:     1.30   # ratio > this → Lean/Athletic
+  shoulder_hip_balanced: 1.10   # ratio in [this, lean) → Average/Balanced
+
+# ─── Streamlit UI ─────────────────────────────────────────────────────────────
+ui:
+  page_title: "AI Fitness Intelligence"
+  page_icon:  "🏋️"

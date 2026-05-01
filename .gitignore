@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# Database & models
+database/fitness.db
+database/*.task
+
+# Environment
+.env
+.env.local
+
+# Streamlit
+.streamlit/
+
+# Node / Expo
+expo_app/node_modules/
+expo_app/.expo/
+expo_app/dist/
+expo_app/web-build/
+expo_app/.env
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Mobile app build artifacts
+*.apk
+*.ipa
+*.aab
