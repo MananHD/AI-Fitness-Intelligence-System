@@ -118,12 +118,14 @@ div[data-testid="stSidebar"] {
 # ── Session State Defaults ────────────────────────────────────────────────────
 def _init_state():
     defaults = {
-        "user_id":    None,
-        "username":   None,
-        "user_data":  None,
-        "session_id": None,
-        "tracker":    None,
-        "exercise":   "squat",
+        "user_id":      None,
+        "username":     None,
+        "user_data":    None,
+        "session_id":   None,
+        "tracker":      None,
+        "exercise":     "squat",
+        "chosen_sport": None,
+        "last_analysis": None,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -133,78 +135,47 @@ _init_state()
 
 
 # ── Sidebar Navigation ────────────────────────────────────────────────────────
+ALL_SPORTS = [
+    'Football','Basketball','Cricket','Tennis','Badminton','Swimming','Cycling',
+    'Running','Athletics (Track)','Walking','Yoga','Gymnastics','Rock Climbing',
+    'Dance','Volleyball','Boxing','Martial Arts','Weight Training','Crossfit',
+    'Pilates','Surfing','Rowing','Table Tennis','Golf','Hiking','Squash',
+    'Water Aerobics','Chair Yoga',
+]
+
+SPORT_EXERCISES = {
+    'Football':['squat','jumping_jack','pushup'],'Basketball':['squat','jumping_jack','pushup'],
+    'Swimming':['pushup','squat','jumping_jack'],'Cycling':['squat','pushup','jumping_jack'],
+    'Running':['squat','jumping_jack','pushup'],'Yoga':['squat','pushup','jumping_jack'],
+    'Gymnastics':['pushup','squat','jumping_jack'],'Rock Climbing':['pushup','squat','jumping_jack'],
+    'Dance':['jumping_jack','squat','pushup'],'Boxing':['pushup','jumping_jack','squat'],
+    'Martial Arts':['pushup','squat','jumping_jack'],'Weight Training':['squat','pushup','jumping_jack'],
+    'Crossfit':['pushup','squat','jumping_jack'],
+}
+
 with st.sidebar:
     st.markdown("## 🏋️ AI Fitness")
     st.markdown("---")
     page = st.radio(
         "Navigate",
-        ["🏠 Home", "👤 Profile", "📸 Body Analysis",
-         "🏃 Live Exercise", "🥗 Diet Plan", "📊 Progress"],
+        ["👤 Profile", "📸 Body Analysis", "🥗 Diet Plan", "🏃 Training", "📊 Progress"],
         label_visibility="collapsed",
     )
     st.markdown("---")
     if st.session_state.username:
         st.success(f"👤 {st.session_state.username}")
     else:
-        st.info("No profile selected")
-
+        st.info("⚠️ No profile — start here")
+    if st.session_state.chosen_sport:
+        st.info(f"🏅 Sport: {st.session_state.chosen_sport}")
     st.markdown("---")
     st.caption("AI Fitness Intelligence v1.0")
 
 
 # ════════════════════════════════════════════════════════════════════════════════
-# PAGE: HOME
+# PAGE: PROFILE (landing page)
 # ════════════════════════════════════════════════════════════════════════════════
-if page == "🏠 Home":
-    st.markdown("# 🏋️ AI-Powered Fitness Intelligence System")
-    st.markdown("### Computer Vision · Personalised Recommendations · Real-Time Feedback")
-    st.markdown("---")
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown("""<div class="metric-card">
-            <div class="metric-value">👁️ CV Core</div>
-            <div class="metric-label">MediaPipe Pose · 33 Keypoints · Real-time 30 FPS</div>
-        </div>""", unsafe_allow_html=True)
-    with col2:
-        st.markdown("""<div class="metric-card">
-            <div class="metric-value">🏃 3 Exercises</div>
-            <div class="metric-label">Squats · Push-ups · Jumping Jacks with rep counting</div>
-        </div>""", unsafe_allow_html=True)
-    with col3:
-        st.markdown("""<div class="metric-card">
-            <div class="metric-value">🥗 36 Plans</div>
-            <div class="metric-label">12 BMI × Diet template meal plans with calorie targets</div>
-        </div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown("### 🚀 Quick Start")
-    st.markdown("""
-1. **👤 Profile** — Create your user profile with height & weight
-2. **📸 Body Analysis** — Upload a photo to get BMI + sport recommendations
-3. **🏃 Live Exercise** — Open webcam and start your workout with real-time feedback
-4. **🥗 Diet Plan** — View your personalised meal plan
-5. **📊 Progress** — Track your BMI and rep history over time
-    """)
-
-    st.markdown("---")
-    st.markdown("### 🏗️ System Architecture")
-    st.code("""
-Input Layer  →  CV Processing Layer   →  Analysis Layer
-(Webcam/Image)  (MediaPipe + OpenCV)     (BMI + Proportions)
-                        ↓
-Intelligence Layer  →  Feedback Layer  →  Persistence Layer
-(Sport + Diet Recs)    (HUD Overlay)       (SQLite DB)
-                        ↓
-                 Interface Layer
-               (Streamlit + FastAPI)
-    """, language="text")
-
-
-# ════════════════════════════════════════════════════════════════════════════════
-# PAGE: PROFILE
-# ════════════════════════════════════════════════════════════════════════════════
-elif page == "👤 Profile":
+if page == "👤 Profile":
     st.markdown("# 👤 User Profile")
     st.markdown("---")
 
@@ -336,7 +307,7 @@ elif page == "📸 Body Analysis":
 # ════════════════════════════════════════════════════════════════════════════════
 # PAGE: LIVE EXERCISE
 # ════════════════════════════════════════════════════════════════════════════════
-elif page == "🏃 Live Exercise":
+elif page == "🏃 Training":
     st.markdown("# 🏃 Live Exercise Tracker")
     st.markdown("Real-time rep counting with posture feedback via your webcam.")
     st.markdown("---")

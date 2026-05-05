@@ -1,84 +1,236 @@
-import React from 'react';
+/**
+ * HomeScreen.js – Profile data collection gate.
+ * User must fill all fields and save before navigating to Analysis.
+ */
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, Image
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { colors, spacing, radius, font } from '../utils/theme';
+import { createUser } from '../utils/api';
+import { saveUser, loadUser } from '../utils/storage';
 
-const FeatureCard = ({ emoji, title, subtitle }) => (
-  <View style={s.card}>
-    <Text style={s.emoji}>{emoji}</Text>
-    <Text style={s.cardTitle}>{title}</Text>
-    <Text style={s.cardSub}>{subtitle}</Text>
-  </View>
+const Chip = ({ label, active, onPress }) => (
+  <TouchableOpacity style={[s.chip, active && s.chipActive]} onPress={onPress}>
+    <Text style={[s.chipTxt, active && s.chipTxtActive]}>{label}</Text>
+  </TouchableOpacity>
 );
 
-const Step = ({ n, title, desc }) => (
-  <View style={s.step}>
-    <View style={s.stepNum}><Text style={s.stepNumTxt}>{n}</Text></View>
-    <View style={{ flex: 1 }}>
-      <Text style={s.stepTitle}>{title}</Text>
-      <Text style={s.stepDesc}>{desc}</Text>
-    </View>
+const Field = ({ label, children }) => (
+  <View style={s.fieldWrap}>
+    <Text style={s.label}>{label}</Text>
+    {children}
   </View>
 );
 
 export default function HomeScreen({ navigation }) {
+  const [username, setUsername] = useState('');
+  const [age, setAge]           = useState('');
+  const [height, setHeight]     = useState('');
+  const [weight, setWeight]     = useState('');
+  const [diet, setDiet]         = useState('veg');
+  const [loading, setLoading]   = useState(false);
+  const [saved, setSaved]       = useState(null);
+
+  useEffect(() => {
+    loadUser().then(u => { if (u) { setSaved(u); populateFields(u); } });
+  }, []);
+
+  const populateFields = (u) => {
+    setUsername(u.username || '');
+    setAge(u.age ? String(u.age) : '');
+    setHeight(u.height_cm ? String(u.height_cm) : '');
+    setWeight(u.weight_kg ? String(u.weight_kg) : '');
+    setDiet(u.diet_pref || 'veg');
+  };
+
+  const isComplete = username.trim() && age && height && weight && diet;
+
+  const handleSave = async () => {
+    if (!username.trim()) { Alert.alert('Required', 'Please enter a username'); return; }
+    if (!age || isNaN(parseInt(age))) { Alert.alert('Required', 'Please enter a valid age'); return; }
+    if (!height || isNaN(parseFloat(height))) { Alert.alert('Required', 'Please enter a valid height'); return; }
+    if (!weight || isNaN(parseFloat(weight))) { Alert.alert('Required', 'Please enter a valid weight'); return; }
+
+    setLoading(true);
+    try {
+      const res = await createUser({
+        username: username.trim(),
+        age: parseInt(age),
+        height_cm: parseFloat(height),
+        weight_kg: parseFloat(weight),
+        diet_pref: diet,
+      });
+      await saveUser(res.user);
+      setSaved(res.user);
+      Alert.alert('✅ Profile Saved', `Welcome, ${res.user.username}! Head to Analysis to get started.`);
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Hero */}
-      <View style={s.hero}>
-        <Text style={s.heroEmoji}>🏋️</Text>
-        <Text style={s.heroTitle}>AI Fitness Intelligence</Text>
-        <Text style={s.heroSub}>
-          Computer Vision · Personalised Recs · Real-Time Feedback
-        </Text>
-      </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 60 }}>
 
-      {/* Feature cards */}
-      <View style={s.row}>
-        <FeatureCard emoji="👁️" title="CV Core" subtitle="MediaPipe · 33 Keypoints" />
-        <FeatureCard emoji="🏃" title="3 Exercises" subtitle="Squat · Pushup · Jump" />
-        <FeatureCard emoji="🥗" title="7-Day Plan" subtitle="12 BMI × Diet combos" />
-      </View>
+        {/* Header */}
+        <View style={s.header}>
+          <Text style={s.heroEmoji}>🏋️</Text>
+          <Text style={s.heroTitle}>AI Fitness Intelligence</Text>
+          <Text style={s.heroSub}>Fill in your details to get personalised recommendations</Text>
+        </View>
 
-      {/* Quick start */}
-      <Text style={s.sectionTitle}>🚀 Quick Start</Text>
-      <Step n="1" title="👤 Profile" desc="Enter your height, weight & diet preference" />
-      <Step n="2" title="📸 Body Analysis" desc="Take a photo → get BMI + sport recommendations" />
-      <Step n="3" title="🥗 Diet Plan" desc="View your personalised weekly meal plan" />
-      <Step n="4" title="📊 Progress" desc="Track BMI and workout history over time" />
+        {/* Saved profile banner */}
+        {saved && (
+          <View style={s.activeBanner}>
+            <Text style={s.bannerLabel}>✅ Active Profile</Text>
+            <Text style={s.bannerName}>{saved.username}</Text>
+            <Text style={s.bannerMeta}>
+              {saved.bmi ? `BMI ${saved.bmi.toFixed(1)} · ` : ''}{saved.bmi_category || 'Not yet analysed'}
+            </Text>
+          </View>
+        )}
 
-      {/* CTA */}
-      <TouchableOpacity style={s.cta} onPress={() => navigation.navigate('Profile')}>
-        <Text style={s.ctaTxt}>Get Started →</Text>
-      </TouchableOpacity>
-    </ScrollView>
+
+
+        {/* Form */}
+        <View style={s.formCard}>
+          <Text style={s.formTitle}>Your Profile</Text>
+
+          <Field label="Username *">
+            <TextInput
+              style={s.input}
+              placeholder="e.g. alex_fit"
+              placeholderTextColor={colors.subtext}
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+          </Field>
+
+          <View style={s.row}>
+            <View style={{ flex: 1 }}>
+              <Field label="Age *">
+                <TextInput
+                  style={s.input}
+                  keyboardType="numeric"
+                  placeholder="25"
+                  placeholderTextColor={colors.subtext}
+                  value={age}
+                  onChangeText={setAge}
+                />
+              </Field>
+            </View>
+            <View style={{ width: spacing.sm }} />
+            <View style={{ flex: 1 }}>
+              <Field label="Height (cm) *">
+                <TextInput
+                  style={s.input}
+                  keyboardType="decimal-pad"
+                  placeholder="170"
+                  placeholderTextColor={colors.subtext}
+                  value={height}
+                  onChangeText={setHeight}
+                />
+              </Field>
+            </View>
+          </View>
+
+          <Field label="Weight (kg) *">
+            <TextInput
+              style={s.input}
+              keyboardType="decimal-pad"
+              placeholder="70.0"
+              placeholderTextColor={colors.subtext}
+              value={weight}
+              onChangeText={setWeight}
+            />
+          </Field>
+
+          <Field label="Dietary Preference *">
+            <View style={s.chipRow}>
+              {['veg', 'non-veg', 'vegan'].map(d => (
+                <Chip key={d} label={d} active={diet === d} onPress={() => setDiet(d)} />
+              ))}
+            </View>
+          </Field>
+
+          <TouchableOpacity
+            style={[s.saveBtn, loading && s.saveBtnDisabled]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color={colors.bg} />
+              : <Text style={s.saveBtnTxt}>💾 Save Profile</Text>}
+          </TouchableOpacity>
+        </View>
+
+        {/* CTA — only enabled after saving */}
+        <TouchableOpacity
+          style={[s.ctaBtn, !saved && s.ctaBtnDisabled]}
+          onPress={() => saved ? navigation.navigate('Analysis') : Alert.alert('Save first', 'Please save your profile before continuing.')}
+        >
+          <Text style={s.ctaBtnTxt}>
+            {saved ? '📸 Continue to Analysis →' : '⚠️ Save your profile to continue'}
+          </Text>
+        </TouchableOpacity>
+
+        {!saved && (
+          <Text style={s.hintTxt}>Fill in all fields and tap "Save Profile" to unlock Analysis</Text>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
-  hero:         { alignItems: 'center', paddingVertical: spacing.xl },
-  heroEmoji:    { fontSize: 56, marginBottom: spacing.sm },
-  heroTitle:    { fontSize: font.xxl, fontWeight: '700', color: colors.text, textAlign: 'center' },
-  heroSub:      { fontSize: font.md, color: colors.subtext, textAlign: 'center', marginTop: spacing.xs },
-  row:          { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
-  card:         { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md,
-                  padding: spacing.md, borderWidth: 1, borderColor: colors.border },
-  emoji:        { fontSize: 28, marginBottom: spacing.xs },
-  cardTitle:    { fontSize: font.lg, fontWeight: '700', color: colors.accent },
-  cardSub:      { fontSize: font.sm, color: colors.subtext, marginTop: 2 },
-  sectionTitle: { fontSize: font.xl, fontWeight: '700', color: colors.text,
-                  marginBottom: spacing.md, marginTop: spacing.sm },
-  step:         { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md,
-                  backgroundColor: colors.surface, borderRadius: radius.md,
-                  padding: spacing.md, borderWidth: 1, borderColor: colors.border },
-  stepNum:      { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.accent,
-                  alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
-  stepNumTxt:   { color: colors.bg, fontWeight: '700', fontSize: font.md },
-  stepTitle:    { fontSize: font.lg, fontWeight: '600', color: colors.text },
-  stepDesc:     { fontSize: font.sm, color: colors.subtext, marginTop: 2 },
-  cta:          { backgroundColor: colors.accent, borderRadius: radius.lg,
-                  padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
-  ctaTxt:       { color: colors.bg, fontWeight: '700', fontSize: font.lg },
+  container:      { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
+  header:         { alignItems: 'center', paddingVertical: spacing.xl },
+  heroEmoji:      { fontSize: 52, marginBottom: spacing.sm },
+  heroTitle:      { fontSize: font.xxl, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  heroSub:        { fontSize: font.md, color: colors.subtext, textAlign: 'center', marginTop: spacing.xs },
+
+  activeBanner:   { backgroundColor: '#0d2b1a', borderRadius: radius.md, padding: spacing.md,
+                    borderWidth: 1, borderColor: colors.accent, marginBottom: spacing.lg },
+  bannerLabel:    { fontSize: font.sm, color: colors.accent, fontWeight: '700' },
+  bannerName:     { fontSize: font.xl, fontWeight: '700', color: colors.text, marginTop: 2 },
+  bannerMeta:     { fontSize: font.sm, color: colors.subtext, marginTop: 2 },
+
+
+
+  formCard:       { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                    borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+  formTitle:      { fontSize: font.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
+
+  fieldWrap:      { marginBottom: spacing.md },
+  label:          { fontSize: font.sm, color: colors.subtext, marginBottom: spacing.xs, fontWeight: '600' },
+  input:          { backgroundColor: colors.bg, borderRadius: radius.sm, padding: spacing.md,
+                    color: colors.text, borderWidth: 1, borderColor: colors.border, fontSize: font.md },
+
+  row:            { flexDirection: 'row' },
+  chipRow:        { flexDirection: 'row', gap: spacing.sm },
+  chip:           { flex: 1, backgroundColor: colors.bg, borderRadius: radius.sm, padding: spacing.sm,
+                    alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  chipActive:     { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipTxt:        { color: colors.subtext, fontWeight: '600', fontSize: font.md },
+  chipTxtActive:  { color: colors.bg },
+
+  saveBtn:        { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
+                    alignItems: 'center', marginTop: spacing.md },
+  saveBtnDisabled:{ opacity: 0.6 },
+  saveBtnTxt:     { color: colors.bg, fontWeight: '700', fontSize: font.lg },
+
+  ctaBtn:         { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
+                    alignItems: 'center', marginBottom: spacing.sm },
+  ctaBtnDisabled: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  ctaBtnTxt:      { color: colors.bg, fontWeight: '700', fontSize: font.lg },
+
+  hintTxt:        { textAlign: 'center', color: colors.subtext, fontSize: font.sm, marginBottom: spacing.lg },
 });

@@ -13,3 +13,12 @@ export const loadUser = async () => {
 export const clearUser = async () => {
   await AsyncStorage.removeItem('user');
 };
+
+export const setJourneyComplete = async () => {
+  await AsyncStorage.setItem('journeyComplete', 'true');
+};
+
+export const isJourneyComplete = async () => {
+  const val = await AsyncStorage.getItem('journeyComplete');
+  return val === 'true';
+};
