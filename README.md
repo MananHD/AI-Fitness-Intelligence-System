@@ -353,6 +353,88 @@ Full interactive docs: `http://127.0.0.1:8000/docs`
 
 ---
 
+## 🧭 Academic Scope Notes (May 2026)
+
+This project is intentionally scoped for an academic timeline. The current plan
+focuses on a lightweight, explainable pipeline rather than heavy ML/DL across
+every subsystem.
+
+### ✅ Agreed Direction
+
+- **Sport recommendation**: rule-based scoring or optional lightweight ML
+- **Diet planning**: rule-based templates
+- **Pose estimation**: use MediaPipe + joint-angle logic (no custom DL model)
+
+The product flow remains:
+
+user → body analysis → sport recommendation → diet → training → tracking
+
+### 🏷️ Sport Categories (Finalized)
+
+Each category contains three target sports. The system recommends the top 2
+fit sports based on body metrics, then the user selects one to train.
+
+1. **Fielding**: Cricket, Baseball, Softball
+2. **Invasion**: Kabaddi, Football, Hockey
+3. **Net**: Badminton, Tennis, Volleyball
+4. **Combat**: Wrestling (Kushti/Mat), Boxing, Mixed Martial Arts (MMA)
+
+### 🏋️ Exercise Mapping per Sport
+
+These exercises are used for training sessions and pose tracking.
+
+**Fielding**
+
+| Sport | Exercise 1 | Exercise 2 | Exercise 3 | Exercise 4 | Exercise 5 |
+|---|---|---|---|---|---|
+| Cricket | Squats | Lateral Shuffle | High Knees | Forward Bend | Overhead Throw Motion |
+| Baseball | Overhead Throw Motion | Squats | Arm Circles | Lunge | Plank |
+| Softball | Lateral Shuffle | Squats | Arm Circles | High Knees | Lunge |
+
+**Invasion**
+
+| Sport | Exercise 1 | Exercise 2 | Exercise 3 | Exercise 4 | Exercise 5 |
+|---|---|---|---|---|---|
+| Kabaddi | Deep Squats | Plank | Lunges | Burpees | High Knees |
+| Football | High Knees | Lunges | Squats | Lateral Shuffle | Burpees |
+| Hockey | Squats | Forward Bend | Lunges | Lateral Shuffle | Plank |
+
+**Net**
+
+| Sport | Exercise 1 | Exercise 2 | Exercise 3 | Exercise 4 | Exercise 5 |
+|---|---|---|---|---|---|
+| Badminton | Jump Squats | Lateral Shuffle | High Knees | Arm Swings | Lunges |
+| Tennis | Lunges | Shoulder Rotation | Arm Circles | Squats | Plank |
+| Volleyball | Jump Squats | Squats | Burpees | Arm Circles | Plank |
+
+**Combat**
+
+| Sport | Exercise 1 | Exercise 2 | Exercise 3 | Exercise 4 | Exercise 5 |
+|---|---|---|---|---|---|
+| Wrestling | Squats | Push-ups | Lunges | Plank | Burpees |
+| Boxing | Shadow Punch | High Knees | Jump Squats | Plank | Shoulder Rotation |
+| MMA | Burpees | Push-ups | Squats | Shadow Punch | Plank |
+
+### ✅ Pose Estimation Exercise Set
+
+Planned exercise list for pose estimation and form checks:
+
+1. Squat
+2. Jump Squat
+3. Lunge
+4. Lateral Shuffle (Side Steps)
+5. Push-up
+6. Shadow Punch (Boxing motion)
+7. Arm Circles
+8. Overhead Throw Motion
+9. Plank
+10. Burpee
+11. High Knees
+12. Forward Bend
+13. Shoulder Rotation
+
+---
+
 ## 📜 License
 
 MIT — free to use, modify, and distribute.
