@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS users (
     bmi_category TEXT,
     body_type   TEXT,
     diet_pref   TEXT    DEFAULT 'veg',
+    gender      TEXT    DEFAULT 'male',
     created_at  TEXT    NOT NULL,
     updated_at  TEXT    NOT NULL
 );
@@ -123,6 +124,12 @@ class DatabaseManager:
         """Create all tables if they do not already exist."""
         with self._conn() as conn:
             conn.executescript(_DDL)
+        # Safe migration: add gender column to existing databases
+        try:
+            with self._conn() as conn:
+                conn.execute("ALTER TABLE users ADD COLUMN gender TEXT DEFAULT 'male'")
+        except Exception:
+            pass  # Column already exists — no action needed
         logger.info("Database schema initialised.")
 
     # ─── Users ────────────────────────────────────────────────────────────────
@@ -134,6 +141,7 @@ class DatabaseManager:
         height_cm: Optional[float] = None,
         weight_kg: Optional[float] = None,
         diet_pref: str = "veg",
+        gender: str = "male",
     ) -> int:
         """
         Insert a new user record.
@@ -145,9 +153,9 @@ class DatabaseManager:
         with self._conn() as conn:
             cur = conn.execute(
                 """INSERT INTO users
-                   (username, age, height_cm, weight_kg, diet_pref, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (username, age, height_cm, weight_kg, diet_pref, now, now),
+                   (username, age, height_cm, weight_kg, diet_pref, gender, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (username, age, height_cm, weight_kg, diet_pref, gender, now, now),
             )
             return cur.lastrowid  # type: ignore[return-value]
 

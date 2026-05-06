@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, View } from 'react-native';
@@ -27,6 +27,22 @@ const Icon = ({ emoji, focused }) => (
     <Text style={{ fontSize: focused ? 26 : 22, opacity: focused ? 1 : 0.55 }}>{emoji}</Text>
   </View>
 );
+
+// Hide tab bar on the Home screen; show it everywhere else
+const TAB_BAR_VISIBLE = {
+  backgroundColor: colors.bg,
+  borderTopColor:  colors.border,
+  borderTopWidth:  1,
+  paddingBottom:   6,
+  paddingTop:      6,
+  height:          62,
+};
+const TAB_BAR_HIDDEN = { display: 'none' };
+
+function getTabBarStyle(route) {
+  const routeName = getFocusedRouteNameFromRoute(route) ?? 'Home';
+  return routeName === 'Home' ? TAB_BAR_HIDDEN : TAB_BAR_VISIBLE;
+}
 
 // ── Stack for the main journey (Home → Analysis → Diet/Training) ──────────
 function MainStack() {
@@ -82,14 +98,6 @@ export default function App() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,   // Stack handles its own headers
-          tabBarStyle: {
-            backgroundColor: colors.bg,
-            borderTopColor:  colors.border,
-            borderTopWidth:  1,
-            paddingBottom:   6,
-            paddingTop:      6,
-            height:          62,
-          },
           tabBarActiveTintColor:   colors.accent,
           tabBarInactiveTintColor: colors.subtext,
           tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 2 },
@@ -98,10 +106,11 @@ export default function App() {
         <Tab.Screen
           name="Journey"
           component={MainStack}
-          options={{
+          options={({ route }) => ({
             title: 'Journey',
             tabBarIcon: ({ focused }) => <Icon emoji="🏠" focused={focused} />,
-          }}
+            tabBarStyle: getTabBarStyle(route),
+          })}
         />
         {journeyDone && (
           <Tab.Screen

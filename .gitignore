@@ -48,3 +48,6 @@ npm-debug.log*
 *.apk
 *.ipa
 *.aab
+
+# Sports image dataset (large binary files — keep local only)
+data_sports/

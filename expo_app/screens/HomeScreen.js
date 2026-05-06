@@ -30,6 +30,7 @@ export default function HomeScreen({ navigation }) {
   const [height, setHeight]     = useState('');
   const [weight, setWeight]     = useState('');
   const [diet, setDiet]         = useState('veg');
+  const [gender, setGender]     = useState('male');
   const [loading, setLoading]   = useState(false);
   const [saved, setSaved]       = useState(null);
 
@@ -43,6 +44,7 @@ export default function HomeScreen({ navigation }) {
     setHeight(u.height_cm ? String(u.height_cm) : '');
     setWeight(u.weight_kg ? String(u.weight_kg) : '');
     setDiet(u.diet_pref || 'veg');
+    setGender(u.gender || 'male');
   };
 
   const isComplete = username.trim() && age && height && weight && diet;
@@ -61,10 +63,15 @@ export default function HomeScreen({ navigation }) {
         height_cm: parseFloat(height),
         weight_kg: parseFloat(weight),
         diet_pref: diet,
+        gender,
       });
       await saveUser(res.user);
       setSaved(res.user);
-      Alert.alert('✅ Profile Saved', `Welcome, ${res.user.username}! Head to Analysis to get started.`);
+      Alert.alert(
+        '✅ Profile Saved',
+        `Welcome, ${res.user.username}! Continuing to Body Analysis.`,
+        [{ text: 'Continue', onPress: () => navigation.navigate('Analysis') }]
+      );
     } catch (e) {
       Alert.alert('Error', e.message);
     } finally {
@@ -161,6 +168,14 @@ export default function HomeScreen({ navigation }) {
             </View>
           </Field>
 
+          <Field label="Gender *">
+            <View style={s.chipRow}>
+              {['male', 'female'].map(g => (
+                <Chip key={g} label={g === 'male' ? '♂ Male' : '♀ Female'} active={gender === g} onPress={() => setGender(g)} />
+              ))}
+            </View>
+          </Field>
+
           <TouchableOpacity
             style={[s.saveBtn, loading && s.saveBtnDisabled]}
             onPress={handleSave}
@@ -168,23 +183,10 @@ export default function HomeScreen({ navigation }) {
           >
             {loading
               ? <ActivityIndicator color={colors.bg} />
-              : <Text style={s.saveBtnTxt}>💾 Save Profile</Text>}
+              : <Text style={s.saveBtnTxt}>💾 Save &amp; Continue →</Text>}
           </TouchableOpacity>
         </View>
 
-        {/* CTA — only enabled after saving */}
-        <TouchableOpacity
-          style={[s.ctaBtn, !saved && s.ctaBtnDisabled]}
-          onPress={() => saved ? navigation.navigate('Analysis') : Alert.alert('Save first', 'Please save your profile before continuing.')}
-        >
-          <Text style={s.ctaBtnTxt}>
-            {saved ? '📸 Continue to Analysis →' : '⚠️ Save your profile to continue'}
-          </Text>
-        </TouchableOpacity>
-
-        {!saved && (
-          <Text style={s.hintTxt}>Fill in all fields and tap "Save Profile" to unlock Analysis</Text>
-        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -226,11 +228,4 @@ const s = StyleSheet.create({
                     alignItems: 'center', marginTop: spacing.md },
   saveBtnDisabled:{ opacity: 0.6 },
   saveBtnTxt:     { color: colors.bg, fontWeight: '700', fontSize: font.lg },
-
-  ctaBtn:         { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
-                    alignItems: 'center', marginBottom: spacing.sm },
-  ctaBtnDisabled: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  ctaBtnTxt:      { color: colors.bg, fontWeight: '700', fontSize: font.lg },
-
-  hintTxt:        { textAlign: 'center', color: colors.subtext, fontSize: font.sm, marginBottom: spacing.lg },
 });

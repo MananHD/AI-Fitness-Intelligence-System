@@ -52,6 +52,7 @@ class UserCreateRequest(BaseModel):
     height_cm:  Optional[float] = None
     weight_kg:  Optional[float] = None
     diet_pref:  str             = "veg"
+    gender:     str             = "male"
 
 
 class AnalyzeBodyRequest(BaseModel):
@@ -97,6 +98,7 @@ def create_user(req: UserCreateRequest):
         height_cm=req.height_cm,
         weight_kg=req.weight_kg,
         diet_pref=req.diet_pref,
+        gender=req.gender,
     )
     return {"status": "ok", "user": user}
 
