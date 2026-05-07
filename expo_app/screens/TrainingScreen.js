@@ -81,7 +81,7 @@ const ExerciseCard = ({ exKey, onStart }) => {
   );
 };
 
-export default function TrainingScreen({ route }) {
+export default function TrainingScreen({ route, navigation }) {
   const { sport = 'Swimming', analysis } = route.params || {};
 
   const exercises = SPORT_EXERCISES[sport] || ['squat', 'pushup', 'jumping_jack'];
@@ -121,8 +121,12 @@ export default function TrainingScreen({ route }) {
     setLoading(true);
     try {
       await endSession(sessionId, { total_reps: reps });
-      await setJourneyComplete();   // unlock Progress tab
-      Alert.alert('✅ Session saved!', `${activeExercise?.replace('_', ' ')} — ${reps} reps recorded.`);
+      await setJourneyComplete();
+      Alert.alert(
+        '✅ Session saved!',
+        `${activeExercise?.replace('_', ' ')} — ${reps} reps recorded.`,
+        [{ text: 'View Progress', onPress: () => navigation.navigate('Progress') }]
+      );
       setActive(null);
       setSessionId(null);
       setReps(0);

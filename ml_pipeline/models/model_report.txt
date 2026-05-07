@@ -1,0 +1,28 @@
+Sport-Classification Model Training Report
+=======================================================
+
+[MALE]
+  Samples  : 177
+  Synth rows: 219
+  Used synth: False
+  Sports   : archery, basketball, cricket, football, kabaddi, shooting, volleyball, weightlifting, wrestling
+  Model    : extra_trees_a
+  Test acc : 0.2222
+  Top-3 acc: 0.5556
+  Top-5 acc: 0.75
+  Top-6 acc: 0.8056
+  CV top1  : 0.2909
+  CV top3  : 0.532
+
+[FEMALE]
+  Samples  : 118
+  Synth rows: 186
+  Used synth: False
+  Sports   : archery, cricket, football, kabaddi, shooting, volleyball, weightlifting, wrestling
+  Model    : extra_trees_a
+  Test acc : 0.25
+  Top-3 acc: 0.625
+  Top-5 acc: 0.75
+  Top-6 acc: 0.8333
+  CV top1  : 0.2655
+  CV top3  : 0.6918

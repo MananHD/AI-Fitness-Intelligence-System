@@ -34,6 +34,7 @@ from database.db_manager import DatabaseManager
 from recommendation.diet_planner import DietPlanner
 from recommendation.sport_recommender import SportRecommender
 from utils.helpers import decode_base64_frame
+from ml_pipeline.predict import get_predictor, PoseQualityError, ModelNotReadyError
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -249,3 +250,45 @@ def get_progress(user_id: int, limit: int = 30):
 @router.get("/health", summary="System health check")
 def health():
     return {"status": "healthy", "service": "AI Fitness Intelligence API"}
+
+
+# ─── Physical Sport Prediction (ML model) ─────────────────────────────────────
+
+class PhysicalSportRequest(BaseModel):
+    frame_b64: str               # base64-encoded JPEG/PNG
+    gender:    str = "male"      # 'male' | 'female'
+
+
+@router.post("/predict-sport-physical",
+             summary="Predict best-fit sports from body proportions (ML model)")
+def predict_sport_physical(req: PhysicalSportRequest):
+    """
+    Threshold pipeline:
+      1. Decode image.
+      2. Run MediaPipe Pose.
+      3. Check >=12/14 key landmarks visible (confidence >= 0.50).
+      4. Compute 12 biometric ratios.
+      5. Run gender-specific Random Forest.
+      6. Return top-3 sport matches with % confidence.
+    """
+    predictor = get_predictor()
+    try:
+        result = predictor.predict_from_base64(req.frame_b64, gender=req.gender)
+        return {"status": "ok", **result}
+    except PoseQualityError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except ModelNotReadyError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("predict_sport_physical error")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/predict-sport-physical/status",
+            summary="Check if physical sport prediction models are loaded")
+def physical_model_status():
+    predictor = get_predictor()
+    return {
+        "male_ready":   predictor.is_ready("male"),
+        "female_ready": predictor.is_ready("female"),
+    }
