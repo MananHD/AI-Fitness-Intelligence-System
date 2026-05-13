@@ -26,7 +26,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiHost": "192.168.1.9",
+      "apiHost": "10.201.80.239",
       "apiPort": "8000"
     }
   }

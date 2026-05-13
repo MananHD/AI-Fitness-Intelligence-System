@@ -1,0 +1,49 @@
+[
+  {
+    "gender": "male",
+    "samples": 177,
+    "synthetic_rows": 219,
+    "used_synthetic": false,
+    "selected_model": "extra_trees_a",
+    "sports": [
+      "archery",
+      "basketball",
+      "cricket",
+      "football",
+      "kabaddi",
+      "shooting",
+      "volleyball",
+      "weightlifting",
+      "wrestling"
+    ],
+    "test_acc": 0.2222,
+    "top3_acc": 0.5556,
+    "top5_acc": 0.75,
+    "top6_acc": 0.8056,
+    "cv_top1_acc": 0.2909,
+    "cv_top3_acc": 0.532
+  },
+  {
+    "gender": "female",
+    "samples": 118,
+    "synthetic_rows": 186,
+    "used_synthetic": false,
+    "selected_model": "extra_trees_a",
+    "sports": [
+      "archery",
+      "cricket",
+      "football",
+      "kabaddi",
+      "shooting",
+      "volleyball",
+      "weightlifting",
+      "wrestling"
+    ],
+    "test_acc": 0.25,
+    "top3_acc": 0.625,
+    "top5_acc": 0.75,
+    "top6_acc": 0.8333,
+    "cv_top1_acc": 0.2655,
+    "cv_top3_acc": 0.6918
+  }
+]

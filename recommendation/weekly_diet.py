@@ -1,7 +1,7 @@
 """Weekly 7-day meal plan generator."""
 from __future__ import annotations
 from dataclasses import dataclass, asdict
-from recommendation.diet_planner import DietPlanner, _calorie_target, _protein_target
+from recommendation.diet_planner import DietPlanner, _calorie_target, _macro_targets
 
 DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 
@@ -143,6 +143,9 @@ def generate_weekly_plan(
     sport_intensity: str,
     dietary_preference: str,
     weight_kg: float,
+    height_cm: float = 170,
+    age: int = 25,
+    gender: str = "male",
 ) -> WeeklyMealPlan:
     pref = dietary_preference.lower()
     pref_key = "non-veg" if pref == "non-veg" else pref.replace("-","")
@@ -154,13 +157,18 @@ def generate_weekly_plan(
         bkey = "veg"
 
     snack_list = _SNACKS.get(pref, _SNACKS["veg"])
-    cal = _calorie_target(bmi_category, sport_intensity, weight_kg)
-    prot = _protein_target(weight_kg, bmi_category)
+    cal, bmr, sport_category, multiplier = _calorie_target(
+        bmi_category,
+        sport,
+        weight_kg,
+        height_cm,
+        age,
+        gender,
+    )
+    prot, carbs, fats = _macro_targets(cal, weight_kg, sport_category)
     water = round(weight_kg * 0.033, 1)
 
-    # BMI multiplier adjustments
-    cal_adj = {"Underweight": 1.1, "Normal": 1.0, "Overweight": 0.88, "Obese": 0.80}
-    day_cal = int(cal * cal_adj.get(bmi_category, 1.0))
+    day_cal = cal
 
     days: dict[str, DailyMealPlan] = {}
     for i, day in enumerate(DAYS):
@@ -176,7 +184,12 @@ def generate_weekly_plan(
             evening_snack=Meal(**es),
             dinner=Meal(**d),
             total_calories=day_cal,
+            bmr=bmr,
+            sport_category=sport_category,
+            activity_multiplier=multiplier,
             protein_target_g=prot,
+            carbs_target_g=carbs,
+            fats_target_g=fats,
             water_litres=water,
             notes=[f"{day}: Focus on {sport}. Stay hydrated."],
         )

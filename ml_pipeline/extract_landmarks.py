@@ -97,11 +97,7 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     for gender in ("male", "female"):
-        # Skip male if CSV already exists
         out = OUTPUT_DIR / ("%s_features.csv" % gender)
-        if out.exists() and gender == "male":
-            print("  [SKIP] %s already exists." % out)
-            continue
 
         print("\n" + "=" * 55)
         print("  Processing: %s" % gender.upper())

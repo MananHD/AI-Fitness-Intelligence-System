@@ -10,7 +10,7 @@ const API_PORT =
   Constants?.expoConfig?.extra?.apiPort ||
   '8000';
 const REQUEST_TIMEOUT_MS = 12000;
-const FIXED_DEV_API_HOST = '192.168.1.9';
+const FIXED_DEV_API_HOST = '10.201.80.239';
 
 const parseHostFromScriptURL = () => {
   try {

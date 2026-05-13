@@ -17,6 +17,7 @@ Usage:
 from __future__ import annotations
 
 import pickle
+import json
 from pathlib import Path
 
 import numpy as np
@@ -75,7 +76,7 @@ def _build_extra_trees(cfg: dict) -> Pipeline:
                 min_samples_leaf=cfg["min_samples_leaf"],
                 class_weight="balanced",
                 random_state=42,
-                n_jobs=-1,
+                n_jobs=1,
             )),
         ]
     )
@@ -153,7 +154,7 @@ def get_candidate_models() -> list[tuple[str, Pipeline]]:
                 ],
                 voting="soft",
                 weights=[2, 1, 1],
-                n_jobs=-1,
+                n_jobs=1,
             ),
         ),
     ]
@@ -328,7 +329,8 @@ def train_gender(gender: str) -> dict:
         f"top3={selected_cv['cv_top3_mean']:.3f} +/- {selected_cv['cv_top3_std']:.3f}"
     )
 
-    # Persist
+    # Persist the selected train/test-split model. This keeps inference aligned
+    # with the evaluated model instead of refitting on all data.
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     with open(MODEL_DIR / f"{gender}_model.pkl", "wb") as f:
         pickle.dump(model, f)
@@ -367,6 +369,7 @@ def main() -> None:
 
     # Write plain-text report
     report_path = MODEL_DIR / "model_report.txt"
+    accuracy_path = MODEL_DIR / "model_accuracy.json"
     lines = ["Sport-Classification Model Training Report", "=" * 55]
     for r in results:
         lines.append(f"\n[{r['gender'].upper()}]")
@@ -385,7 +388,9 @@ def main() -> None:
             lines.append(f"  CV top1  : {r['cv_top1_acc']}")
             lines.append(f"  CV top3  : {r['cv_top3_acc']}")
     report_path.write_text("\n".join(lines), encoding="utf-8")
+    accuracy_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\nReport -> {report_path}")
+    print(f"Accuracy -> {accuracy_path}")
 
 
 if __name__ == "__main__":

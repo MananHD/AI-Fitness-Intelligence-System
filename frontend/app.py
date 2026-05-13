@@ -41,7 +41,7 @@ from recommendation.sport_recommender import SportRecommender
 from utils.helpers import draw_overlay, draw_feedback_bar, draw_rep_counter, encode_frame_base64
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-API_BASE = "http://127.0.0.1:8000/api"
+API_BASE = "http://10.201.80.239:8000/api"
 DB = DatabaseManager()
 DB.init_db()
 SPORT_REC = SportRecommender()

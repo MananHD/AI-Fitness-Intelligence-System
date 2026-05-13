@@ -72,7 +72,7 @@ if __name__ == "__main__":
     cfg = load_config().get("backend", {})
     uvicorn.run(
         "backend.main:app",
-        host=cfg.get("host", "127.0.0.1"),
+        host=cfg.get("host", "0.0.0.0"),
         port=cfg.get("port", 8000),
         reload=True,
         log_level="info",

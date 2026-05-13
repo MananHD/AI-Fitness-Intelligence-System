@@ -75,6 +75,10 @@ class DietRequest(BaseModel):
     sport_intensity:   str   = "Moderate"
     dietary_preference: str  = "veg"
     weight_kg:         float = Field(gt=0)
+    height_cm:         float = Field(default=170, gt=0)
+    age:               int   = Field(default=25, gt=0)
+    gender:            str   = "male"
+    day_index:         int   = 0
 
 
 class StartSessionRequest(BaseModel):
@@ -190,6 +194,10 @@ def recommend_diet(req: DietRequest):
             req.sport_intensity,
             req.dietary_preference,
             req.weight_kg,
+            req.height_cm,
+            req.age,
+            req.gender,
+            req.day_index,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -257,6 +265,8 @@ def health():
 class PhysicalSportRequest(BaseModel):
     frame_b64: str               # base64-encoded JPEG/PNG
     gender:    str = "male"      # 'male' | 'female'
+    height_cm: Optional[float] = None
+    weight_kg: Optional[float] = None
 
 
 @router.post("/predict-sport-physical",
@@ -273,7 +283,12 @@ def predict_sport_physical(req: PhysicalSportRequest):
     """
     predictor = get_predictor()
     try:
-        result = predictor.predict_from_base64(req.frame_b64, gender=req.gender)
+        result = predictor.predict_from_base64(
+            req.frame_b64,
+            gender=req.gender,
+            height_cm=req.height_cm,
+            weight_kg=req.weight_kg,
+        )
         return {"status": "ok", **result}
     except PoseQualityError as e:
         raise HTTPException(status_code=422, detail=str(e))

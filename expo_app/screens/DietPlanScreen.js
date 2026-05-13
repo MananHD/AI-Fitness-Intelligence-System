@@ -71,6 +71,10 @@ export default function DietPlanScreen() {
           sport_intensity: intensity,
           dietary_preference: diet,
           weight_kg: weight,
+          height_cm: user?.height_cm || 170,
+          age: user?.age || 25,
+          gender: user?.gender || 'male',
+          day_index: i,
         });
         days[DAYS[i]] = res.meal_plan;
       }

@@ -7,6 +7,7 @@ import {
   Image, Alert, ActivityIndicator, Modal, FlatList,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import Svg, { Circle, Line } from 'react-native-svg';
 import { colors, spacing, radius, font } from '../utils/theme';
 import { analyzeBody, predictSportPhysical } from '../utils/api';
 import { loadUser, saveUser } from '../utils/storage';
@@ -19,26 +20,94 @@ const MetricBox = ({ label, value }) => (
 );
 
 const ALL_SPORTS = [
-  'Football', 'Basketball', 'Cricket', 'Tennis', 'Badminton',
-  'Swimming', 'Cycling', 'Running', 'Athletics (Track)', 'Walking',
-  'Yoga', 'Gymnastics', 'Rock Climbing', 'Dance', 'Volleyball',
-  'Boxing', 'Martial Arts', 'Rowing', 'Skiing', 'Water Aerobics',
-  'Chair Yoga', 'Table Tennis', 'Golf', 'Hiking', 'Crossfit',
-  'Weight Training', 'Pilates', 'Surfing', 'Horse Riding', 'Squash',
+  'archery',
+  'athletics',
+  'badminton',
+  'basketball',
+  'cricket',
+  'field_hockey',
+  'football',
+  'kabaddi',
+  'shooting',
+  'volleyball',
+  'weightlifting',
+  'wrestling',
 ];
+
+const POSE_LINES = [
+  ['left_shoulder', 'right_shoulder'],
+  ['left_shoulder', 'left_elbow'],
+  ['left_elbow', 'left_wrist'],
+  ['right_shoulder', 'right_elbow'],
+  ['right_elbow', 'right_wrist'],
+  ['left_shoulder', 'left_hip'],
+  ['right_shoulder', 'right_hip'],
+  ['left_hip', 'right_hip'],
+  ['left_hip', 'left_knee'],
+  ['left_knee', 'left_ankle'],
+  ['right_hip', 'right_knee'],
+  ['right_knee', 'right_ankle'],
+  ['nose', 'left_shoulder'],
+  ['nose', 'right_shoulder'],
+];
+
+const sportLabel = sport => sport.replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
 
 const MatchCard = ({ item, selected, onPress, rank }) => (
   <TouchableOpacity style={[s.matchCard, selected && s.matchCardSelected]} onPress={onPress}>
     <View style={s.matchTop}>
       <Text style={[s.rankPill, rank === 1 && s.rankPillTop]}>{`#${rank}`}</Text>
-      <Text style={[s.matchSport, selected && s.matchSportSelected]}>{item.sport}</Text>
-      <Text style={[s.matchPct, selected && s.matchPctSelected]}>{item.confidence}%</Text>
+      <Text style={[s.matchSport, selected && s.matchSportSelected]}>{sportLabel(item.sport)}</Text>
+      <View style={s.matchScoreBox}>
+        <Text style={[s.matchPct, selected && s.matchPctSelected]}>{item.confidence}%</Text>
+        <Text style={[s.matchPctLabel, selected && s.matchPctSelected]}>confidence</Text>
+      </View>
     </View>
     <View style={s.barWrap}>
       <View style={[s.barFill, { width: `${Math.max(item.confidence, 4)}%` }]} />
     </View>
   </TouchableOpacity>
 );
+
+const PoseOverlay = ({ points }) => {
+  if (!points) return null;
+  const isVisible = point => point && (point.visibility ?? 1) >= 0.35;
+
+  return (
+    <Svg style={s.poseOverlay} viewBox="0 0 1 1" preserveAspectRatio="none">
+      {POSE_LINES.map(([from, to]) => {
+        const a = points[from];
+        const b = points[to];
+        if (!isVisible(a) || !isVisible(b)) return null;
+        return (
+          <Line
+            key={`${from}-${to}`}
+            x1={a.x}
+            y1={a.y}
+            x2={b.x}
+            y2={b.y}
+            stroke="#21f56b"
+            strokeWidth={0.008}
+            strokeLinecap="round"
+          />
+        );
+      })}
+      {Object.entries(points).map(([name, point]) => (
+        isVisible(point) ? (
+          <Circle
+            key={name}
+            cx={point.x}
+            cy={point.y}
+            r={0.012}
+            fill="#21f56b"
+            stroke="#052e16"
+            strokeWidth={0.004}
+          />
+        ) : null
+      ))}
+    </Svg>
+  );
+};
 
 const prettyLabel = (key) => key.replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
 
@@ -47,6 +116,7 @@ export default function AnalysisScreen({ navigation }) {
   const [bodyResult, setBodyResult] = useState(null);
   const [topMatches, setTopMatches] = useState([]);
   const [ratios, setRatios] = useState(null);
+  const [poseLandmarks, setPoseLandmarks] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedSport, setSelectedSport] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -58,7 +128,10 @@ export default function AnalysisScreen({ navigation }) {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true, aspect: [3, 4], quality: 0.9, base64: true,
     });
-    if (!img.canceled) setImage(img.assets[0]);
+    if (!img.canceled) {
+      setImage(img.assets[0]);
+      setPoseLandmarks(null);
+    }
   };
 
   const takePhoto = async () => {
@@ -67,7 +140,10 @@ export default function AnalysisScreen({ navigation }) {
     const img = await ImagePicker.launchCameraAsync({
       allowsEditing: true, aspect: [3, 4], quality: 0.9, base64: true,
     });
-    if (!img.canceled) setImage(img.assets[0]);
+    if (!img.canceled) {
+      setImage(img.assets[0]);
+      setPoseLandmarks(null);
+    }
   };
 
   const analyse = async () => {
@@ -94,6 +170,8 @@ export default function AnalysisScreen({ navigation }) {
         predictSportPhysical({
           frame_b64: image.base64,
           gender: (user.gender || 'male').toLowerCase(),
+          height_cm: user.height_cm || 170,
+          weight_kg: user.weight_kg || 70,
         }),
       ]);
 
@@ -105,7 +183,8 @@ export default function AnalysisScreen({ navigation }) {
       setBodyResult(analysisRes.analysis);
       setTopMatches(normalizedTop3);
       setRatios(physicalRes.features || null);
-      setSelectedSport(normalizedTop3[0]?.sport || null);
+      setPoseLandmarks(physicalRes.pose_landmarks || null);
+      setSelectedSport(null);
     } catch (e) {
       Alert.alert('Analysis failed', e.message);
     } finally {
@@ -173,7 +252,7 @@ export default function AnalysisScreen({ navigation }) {
           <View style={s.divider} />
           <Text style={s.sectionTitle}>🏅 Top 3 Sport Match</Text>
           <Text style={s.sectionSub}>
-            Choose one match to generate your next Diet and Training plan.
+            Hybrid confidence combines height, weight, BMI, body ratios, and model output.
           </Text>
           {topMatches.map((item, i) => (
             <MatchCard
@@ -188,7 +267,7 @@ export default function AnalysisScreen({ navigation }) {
           <Text style={s.subLabel}>Or choose any sport</Text>
           <TouchableOpacity style={s.allSportsBtn} onPress={() => setShowPicker(true)}>
             <Text style={s.allSportsBtnTxt}>
-              {selectedSport ? `✅ ${selectedSport}` : '🔍 Browse all sports...'}
+              {selectedSport ? `✅ ${sportLabel(selectedSport)}` : '🔍 Browse all sports...'}
             </Text>
           </TouchableOpacity>
         </>
@@ -198,6 +277,12 @@ export default function AnalysisScreen({ navigation }) {
         <>
           <View style={s.divider} />
           <Text style={s.sectionTitle}>📐 Extracted Biometric Ratios</Text>
+          {image && poseLandmarks && (
+            <View style={s.posePreviewBox}>
+              <Image source={{ uri: image.uri }} style={s.image} resizeMode="stretch" />
+              <PoseOverlay points={poseLandmarks} />
+            </View>
+          )}
           {Object.entries(ratios).slice(0, 8).map(([key, val]) => (
             <View key={key} style={s.infoRow}>
               <Text style={s.infoLabel}>{prettyLabel(key)}</Text>
@@ -209,7 +294,7 @@ export default function AnalysisScreen({ navigation }) {
 
       {selectedSport && (
         <TouchableOpacity style={s.continueBtn} onPress={handleContinue}>
-          <Text style={s.continueBtnTxt}>Continue with {selectedSport} →</Text>
+          <Text style={s.continueBtnTxt}>Continue with {sportLabel(selectedSport)} →</Text>
         </TouchableOpacity>
       )}
 
@@ -228,7 +313,7 @@ export default function AnalysisScreen({ navigation }) {
                   onPress={() => { setSelectedSport(item); setShowPicker(false); }}
                 >
                   <Text style={[s.modalChipTxt, selectedSport === item && s.modalChipTxtSelected]}>
-                    {item}
+                    {sportLabel(item)}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -253,6 +338,11 @@ const s = StyleSheet.create({
     overflow: 'hidden', borderWidth: 1, borderColor: colors.border, marginBottom: spacing.md,
   },
   image: { width: '100%', height: '100%' },
+  poseOverlay: { ...StyleSheet.absoluteFillObject },
+  posePreviewBox: {
+    height: 240, backgroundColor: colors.surface, borderRadius: radius.md,
+    overflow: 'hidden', borderWidth: 1, borderColor: colors.border, marginBottom: spacing.md,
+  },
   imagePlaceholderBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
   imagePlaceholderEmoji: { fontSize: 48, marginBottom: spacing.sm },
   imagePlaceholderTxt: { color: colors.subtext, textAlign: 'center', fontSize: font.md },
@@ -296,7 +386,9 @@ const s = StyleSheet.create({
   rankPillTop: { backgroundColor: colors.accent, color: colors.bg },
   matchSport: { flex: 1, color: colors.text, fontWeight: '700', fontSize: font.md },
   matchSportSelected: { color: colors.accent },
+  matchScoreBox: { alignItems: 'flex-end', minWidth: 64 },
   matchPct: { color: colors.text, fontWeight: '700', fontSize: font.md },
+  matchPctLabel: { color: colors.subtext, fontWeight: '600', fontSize: font.sm, marginTop: 1 },
   matchPctSelected: { color: colors.accent },
   barWrap: { height: 8, backgroundColor: colors.bg, borderRadius: 999, overflow: 'hidden' },
   barFill: { height: 8, backgroundColor: colors.accent },
