@@ -8,13 +8,12 @@ import { recommendDiet } from '../utils/api';
 import { loadUser } from '../utils/storage';
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-const DAY_EMOJIS = ['🌙','🌿','🔥','💪','🎯','🏖','☀️'];
 const MEALS = [
-  ['🌅 Breakfast','breakfast'],
-  ['🍎 Mid-Morning','mid_morning_snack'],
-  ['🌞 Lunch','lunch'],
-  ['🍊 Evening','evening_snack'],
-  ['🌙 Dinner','dinner'],
+  ['Breakfast','breakfast'],
+  ['Mid-Morning Snack','mid_morning_snack'],
+  ['Lunch','lunch'],
+  ['Evening Snack','evening_snack'],
+  ['Dinner','dinner'],
 ];
 
 const Chip = ({ label, active, onPress }) => (
@@ -26,12 +25,12 @@ const Chip = ({ label, active, onPress }) => (
   </TouchableOpacity>
 );
 
-const MealSection = ({ emoji, name, items, calories }) => {
+const MealSection = ({ name, items, calories }) => {
   const [open, setOpen] = useState(false);
   return (
     <TouchableOpacity style={s.mealCard} onPress={() => setOpen(o => !o)}>
       <View style={s.mealHeader}>
-        <Text style={s.mealName}>{emoji} {name}</Text>
+        <Text style={s.mealName}>{name}</Text>
         <Text style={s.mealCal}>{calories} kcal {open ? '▲' : '▼'}</Text>
       </View>
       {open && items.map((item, i) => (
@@ -50,6 +49,7 @@ export default function DietPlanScreen() {
   const [loading, setLoading] = useState(false);
   const [weekPlan, setWeekPlan] = useState(null);
   const [activeDay, setActiveDay] = useState(0);
+  const s = createStyles(colors);
 
   const generate = async () => {
     setLoading(true);
@@ -91,8 +91,8 @@ export default function DietPlanScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={s.title}>🥗 Weekly Diet Plan</Text>
-      <Text style={s.subtitle}>Personalised 7-day meal plan with daily variety</Text>
+      <Text style={s.title}>Weekly Diet Plan</Text>
+      <Text style={s.subtitle}>Personalised 7-day meal plan with daily variety.</Text>
 
       {/* BMI Category */}
       <Text style={s.label}>BMI Category</Text>
@@ -121,7 +121,7 @@ export default function DietPlanScreen() {
       <TouchableOpacity style={s.btn} onPress={generate} disabled={loading}>
         {loading
           ? <ActivityIndicator color={colors.bg} />
-          : <Text style={s.btnTxt}>🍽️ Generate 7-Day Plan</Text>}
+          : <Text style={s.btnTxt}>Generate 7-Day Plan</Text>}
       </TouchableOpacity>
 
       {weekPlan && (
@@ -152,10 +152,7 @@ export default function DietPlanScreen() {
                 style={[s.dayTab, activeDay === i && s.dayTabActive]}
                 onPress={() => setActiveDay(i)}
               >
-                <Text style={s.dayEmoji}>{DAY_EMOJIS[i]}</Text>
-                <Text style={[s.dayLabel, activeDay === i && s.dayLabelActive]}>
-                  {day.slice(0, 3)}
-                </Text>
+                <Text style={[s.dayLabel, activeDay === i && s.dayLabelActive]}>{day.slice(0, 3)}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -163,13 +160,12 @@ export default function DietPlanScreen() {
           {/* Meals for active day */}
           {dayPlan && (
             <View>
-              <Text style={s.dayTitle}>{DAY_EMOJIS[activeDay]} {currentDay}</Text>
-              {MEALS.map(([emoji, key]) => {
+              <Text style={s.dayTitle}>{currentDay}</Text>
+              {MEALS.map(([name, key]) => {
                 const meal = dayPlan[key];
                 return meal ? (
                   <MealSection
                     key={key}
-                    emoji={emoji}
                     name={meal.name}
                     items={meal.items}
                     calories={meal.approx_calories}
@@ -178,7 +174,7 @@ export default function DietPlanScreen() {
               })}
 
               {dayPlan.notes?.map((n, i) => (
-                <Text key={i} style={s.note}>ℹ️ {n}</Text>
+                <Text key={i} style={s.note}>{n}</Text>
               ))}
             </View>
           )}
@@ -188,40 +184,41 @@ export default function DietPlanScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
-  title:       { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.xs },
-  subtitle:    { fontSize: font.md, color: colors.subtext, marginBottom: spacing.lg },
-  label:       { fontSize: font.md, color: colors.subtext, marginBottom: spacing.xs, marginTop: spacing.md },
-  chipRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip:        { backgroundColor: colors.surface, borderRadius: radius.sm, paddingHorizontal: spacing.md,
-                 paddingVertical: spacing.xs, borderWidth: 1, borderColor: colors.border },
-  chipActive:  { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipTxt:     { color: colors.subtext, fontWeight: '600', fontSize: font.sm },
-  chipTxtActive:{ color: colors.bg },
-  btn:         { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
-                 alignItems: 'center', marginTop: spacing.lg, marginBottom: spacing.md },
-  btnTxt:      { color: colors.bg, fontWeight: '700', fontSize: font.lg },
-  summaryRow:  { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  summaryBox:  { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
-                 alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  summaryVal:  { fontSize: font.xl, fontWeight: '700', color: colors.accent },
-  summarySub:  { fontSize: font.sm, color: colors.subtext },
-  dayScroll:   { marginBottom: spacing.md },
-  dayTab:      { alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-                 marginRight: spacing.xs, borderRadius: radius.md, backgroundColor: colors.surface,
-                 borderWidth: 1, borderColor: colors.border, minWidth: 60 },
-  dayTabActive:{ backgroundColor: colors.accent, borderColor: colors.accent },
-  dayEmoji:    { fontSize: 20 },
-  dayLabel:    { fontSize: font.sm, color: colors.subtext, fontWeight: '600', marginTop: 2 },
-  dayLabelActive:{ color: colors.bg },
-  dayTitle:    { fontSize: font.xl, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
-  mealCard:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
-                 marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
-  mealHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  mealName:    { fontSize: font.md, fontWeight: '600', color: colors.text, flex: 1 },
-  mealCal:     { fontSize: font.sm, color: colors.accent, fontWeight: '600' },
-  mealItem:    { color: colors.subtext, fontSize: font.md, marginTop: spacing.xs },
-  note:        { color: colors.subtext, fontSize: font.sm, marginTop: spacing.xs,
-                 fontStyle: 'italic' },
-});
+function createStyles(colors) {
+  return StyleSheet.create({
+    container:   { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
+    title:       { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.xs },
+    subtitle:    { fontSize: font.md, color: colors.subtext, marginBottom: spacing.lg },
+    label:       { fontSize: font.md, color: colors.subtext, marginBottom: spacing.xs, marginTop: spacing.md },
+    chipRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+    chip:        { backgroundColor: colors.surface, borderRadius: radius.sm, paddingHorizontal: spacing.md,
+                   paddingVertical: spacing.xs, borderWidth: 1, borderColor: colors.border },
+    chipActive:  { backgroundColor: colors.accent, borderColor: colors.accent },
+    chipTxt:     { color: colors.subtext, fontWeight: '600', fontSize: font.sm },
+    chipTxtActive:{ color: colors.bg },
+    btn:         { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
+                   alignItems: 'center', marginTop: spacing.lg, marginBottom: spacing.md },
+    btnTxt:      { color: colors.bg, fontWeight: '700', fontSize: font.lg },
+    summaryRow:  { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+    summaryBox:  { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                   alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    summaryVal:  { fontSize: font.xl, fontWeight: '700', color: colors.accent },
+    summarySub:  { fontSize: font.sm, color: colors.subtext },
+    dayScroll:   { marginBottom: spacing.md },
+    dayTab:      { alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+                   marginRight: spacing.xs, borderRadius: radius.md, backgroundColor: colors.surface,
+                   borderWidth: 1, borderColor: colors.border, minWidth: 60 },
+    dayTabActive:{ backgroundColor: colors.accent, borderColor: colors.accent },
+    dayLabel:    { fontSize: font.sm, color: colors.subtext, fontWeight: '600', marginTop: 2 },
+    dayLabelActive:{ color: colors.bg },
+    dayTitle:    { fontSize: font.xl, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
+    mealCard:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                   marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
+    mealHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    mealName:    { fontSize: font.md, fontWeight: '600', color: colors.text, flex: 1 },
+    mealCal:     { fontSize: font.sm, color: colors.accent, fontWeight: '600' },
+    mealItem:    { color: colors.subtext, fontSize: font.md, marginTop: spacing.xs },
+    note:        { color: colors.subtext, fontSize: font.sm, marginTop: spacing.xs,
+                   fontStyle: 'italic' },
+  });
+}

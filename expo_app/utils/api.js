@@ -2,15 +2,15 @@
 import { Platform, NativeModules } from 'react-native';
 import Constants from 'expo-constants';
 
-// You can override these via env:
-//   EXPO_PUBLIC_API_HOST=192.168.x.x
-//   EXPO_PUBLIC_API_PORT=8000
+// Environment variables (set via .env in project root):
+//   EXPO_PUBLIC_API_HOST=192.168.x.x (your machine's local IP)
+//   EXPO_PUBLIC_API_PORT=8000 (optional, defaults to 8000)
 const API_PORT =
   process.env.EXPO_PUBLIC_API_PORT ||
   Constants?.expoConfig?.extra?.apiPort ||
   '8000';
-const REQUEST_TIMEOUT_MS = 12000;
-const FIXED_DEV_API_HOST = '10.201.80.239';
+const REQUEST_TIMEOUT_MS = 120000;
+const FALLBACK_HOSTS = [];
 
 const parseHostFromScriptURL = () => {
   try {
@@ -52,16 +52,19 @@ const getCandidateHosts = () => {
   const expoHost = parseHostFromExpoConstants();
   const hosts = [];
 
-  // Force known LAN IP first for Expo Go on physical device.
-  hosts.push(FIXED_DEV_API_HOST);
+  // Highest priority: explicit host provided via environment variable
+  if (envHost && envHost.trim()) {
+    hosts.push(envHost.trim());
+  }
 
-  // Highest priority: explicit host provided by developer.
-  if (envHost) hosts.push(envHost);
+  // Add fallback hosts for common LAN IP ranges
+  hosts.push(...FALLBACK_HOSTS);
 
-  // In Expo dev, this is usually your laptop LAN IP on phone.
+  // In Expo dev, try to extract from Metro bundle host
   if (metroHost) hosts.push(metroHost);
   if (expoHost) hosts.push(expoHost);
 
+  // Platform-specific fallbacks
   if (Platform.OS === 'android') {
     hosts.push('10.0.2.2'); // Android emulator -> host machine
   }
@@ -73,7 +76,7 @@ const getCandidateHosts = () => {
   hosts.push('127.0.0.1');
   hosts.push('localhost');
 
-  // Remove duplicates while preserving order.
+  // Remove duplicates while preserving order
   return [...new Set(hosts.filter(Boolean))];
 };
 
@@ -151,3 +154,56 @@ export const getProgress = (userId) => req('GET', `/progress/${userId}`);
 
 // Health
 export const healthCheck = () => req('GET', '/health');
+
+// Exercise Monitoring
+export const processFrame = (data) => req('POST', '/exercise/process-frame', data);
+export const processVideo = async ({ uri, exercise, sessionId = 0, name = 'exercise.mp4', type = 'video/mp4' }) => {
+  const formData = new FormData();
+  formData.append('exercise', exercise);
+  formData.append('session_id', String(sessionId));
+  formData.append('video_file', { uri, name, type });
+
+  const hosts = lastWorkingHost
+    ? [lastWorkingHost, ...getCandidateHosts().filter(h => h !== lastWorkingHost)]
+    : getCandidateHosts();
+
+  let lastNetworkError = null;
+  for (const host of hosts) {
+    const base = makeApiBase(host);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const res = await fetch(`${base}/exercise/process-video`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new Error(`API ${res.status}: /exercise/process-video`);
+        }
+
+        lastWorkingHost = host;
+        return res.json();
+      } finally {
+        clearTimeout(timeout);
+      }
+    } catch (err) {
+      if (err.name === 'AbortError' || err.message === 'Network request failed') {
+        lastNetworkError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw new Error(
+    `Cannot reach backend. Tried: ${hosts.map(h => makeApiBase(h)).join(', ')}. ` +
+    `Last error: ${lastNetworkError?.message || 'timeout'}`
+  );
+};
+export const getSportsMapping = () => req('GET', '/exercise/sports-mapping');
+export const getExerciseInfo = (key) => req('GET', `/exercise/info/${key}`);
+export const listExercises = () => req('GET', '/exercise/list');
+export const resetTracker = (sessionId) => req('POST', `/exercise/reset-tracker/${sessionId}`);

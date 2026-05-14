@@ -10,14 +10,21 @@ import { LineChart, BarChart } from 'react-native-chart-kit';
 
 const W = Dimensions.get('window').width - spacing.md * 2;
 
-const chartConfig = {
+const createChartConfig = (colors) => ({
   backgroundGradientFrom: colors.surface,
   backgroundGradientTo: colors.surface2,
-  color: (opacity = 1) => `rgba(0, 230, 118, ${opacity})`,
+  color: (opacity = 1) => {
+    const hex = colors.accent.replace('#', '');
+    const value = parseInt(hex, 16);
+    const r = (value >> 16) & 255;
+    const g = (value >> 8) & 255;
+    const b = value & 255;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  },
   labelColor: () => colors.subtext,
   strokeWidth: 2,
   propsForDots: { r: '4', strokeWidth: '2', stroke: colors.accent },
-};
+});
 
 export default function ProgressScreen() {
   const [summary, setSummary] = useState(null);
@@ -25,6 +32,8 @@ export default function ProgressScreen() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState(0);
+  const s = createStyles(colors);
+  const chartConfig = createChartConfig(colors);
 
   const load = useCallback(async () => {
     const user = await loadUser();
@@ -55,7 +64,7 @@ export default function ProgressScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={s.title}>📊 Progress</Text>
+      <Text style={s.title}>Progress</Text>
 
       {loading && <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />}
 
@@ -66,7 +75,7 @@ export default function ProgressScreen() {
             Complete a Body Analysis to start tracking your progress.
           </Text>
           <TouchableOpacity style={s.refreshBtn} onPress={load}>
-            <Text style={s.refreshTxt}>🔄 Refresh</Text>
+            <Text style={s.refreshTxt}>Refresh</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -181,7 +190,7 @@ export default function ProgressScreen() {
           )}
 
           <TouchableOpacity style={s.refreshBtn} onPress={load}>
-            <Text style={s.refreshTxt}>🔄 Refresh</Text>
+            <Text style={s.refreshTxt}>Refresh</Text>
           </TouchableOpacity>
         </>
       )}
@@ -189,37 +198,39 @@ export default function ProgressScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
-  title:        { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.lg },
-  metricsRow:   { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
-  metric:       { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.sm,
-                  alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  metricVal:    { fontSize: font.xl, fontWeight: '700', color: colors.accent },
-  metricLabel:  { fontSize: font.sm, color: colors.subtext, marginTop: 2, textAlign: 'center' },
-  tabRow:       { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  tabBtn:       { flex: 1, backgroundColor: colors.surface, borderRadius: radius.sm, padding: spacing.sm,
-                  alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  tabBtnActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  tabTxt:       { color: colors.subtext, fontWeight: '600' },
-  tabTxtActive: { color: colors.bg },
-  chartWrap:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
-                  marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
-  chartTitle:   { fontSize: font.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
-  refLines:     { marginTop: spacing.sm },
-  refLine:      { fontSize: font.sm, marginTop: 2 },
-  sectionTitle: { fontSize: font.xl, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
-  sessCard:     { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
-                  marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
-  sessExercise: { fontSize: font.md, fontWeight: '700', color: colors.accent, marginBottom: spacing.xs },
-  sessRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sessVal:      { fontSize: font.md, fontWeight: '600', color: colors.text },
-  sessMeta:     { fontSize: font.sm, color: colors.subtext },
-  emptyCard:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.xl,
-                  alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  emptyTxt:     { fontSize: font.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
-  emptySubTxt:  { fontSize: font.md, color: colors.subtext, textAlign: 'center' },
-  refreshBtn:   { backgroundColor: colors.surface2, borderRadius: radius.md, padding: spacing.md,
-                  alignItems: 'center', marginTop: spacing.lg, borderWidth: 1, borderColor: colors.border },
-  refreshTxt:   { color: colors.accent, fontWeight: '600', fontSize: font.md },
-});
+function createStyles(colors) {
+  return StyleSheet.create({
+    container:    { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
+    title:        { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.lg },
+    metricsRow:   { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
+    metric:       { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.sm,
+                    alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    metricVal:    { fontSize: font.xl, fontWeight: '700', color: colors.accent },
+    metricLabel:  { fontSize: font.sm, color: colors.subtext, marginTop: 2, textAlign: 'center' },
+    tabRow:       { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+    tabBtn:       { flex: 1, backgroundColor: colors.surface, borderRadius: radius.sm, padding: spacing.sm,
+                    alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    tabBtnActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+    tabTxt:       { color: colors.subtext, fontWeight: '600' },
+    tabTxtActive: { color: colors.bg },
+    chartWrap:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                    marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
+    chartTitle:   { fontSize: font.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
+    refLines:     { marginTop: spacing.sm },
+    refLine:      { fontSize: font.sm, marginTop: 2 },
+    sectionTitle: { fontSize: font.xl, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
+    sessCard:     { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                    marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
+    sessExercise: { fontSize: font.md, fontWeight: '700', color: colors.accent, marginBottom: spacing.xs },
+    sessRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    sessVal:      { fontSize: font.md, fontWeight: '600', color: colors.text },
+    sessMeta:     { fontSize: font.sm, color: colors.subtext },
+    emptyCard:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.xl,
+                    alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    emptyTxt:     { fontSize: font.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
+    emptySubTxt:  { fontSize: font.md, color: colors.subtext, textAlign: 'center' },
+    refreshBtn:   { backgroundColor: colors.surface2, borderRadius: radius.md, padding: spacing.md,
+                    alignItems: 'center', marginTop: spacing.lg, borderWidth: 1, borderColor: colors.border },
+    refreshTxt:   { color: colors.accent, fontWeight: '600', fontSize: font.md },
+  });
+}

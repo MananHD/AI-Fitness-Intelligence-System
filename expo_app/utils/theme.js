@@ -1,15 +1,16 @@
 // utils/theme.js – Design tokens
 export const colors = {
-  bg:       '#0f1117',
-  surface:  '#1a1f2e',
-  surface2: '#252840',
-  border:   '#2d3150',
-  text:     '#e2e8f0',
-  subtext:  '#8892b0',
-  accent:   '#00e676',
-  blue:     '#4f8ef7',
-  yellow:   '#f6e05e',
-  red:      '#fc8181',
+  bg:       '#0b1220',
+  surface:  '#111a2b',
+  surface2: '#162136',
+  border:   '#24324b',
+  text:     '#edf2f7',
+  subtext:  '#93a4bc',
+  accent:   '#4f8ff7',
+  blue:     '#60a5fa',
+  yellow:   '#fbbf24',
+  red:      '#ef4444',
+  green:    '#22c55e',
 };
 
 export const spacing = {

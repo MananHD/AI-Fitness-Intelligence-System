@@ -85,6 +85,15 @@ def get_elbow_angle(landmarks: dict, side: str = "left") -> Optional[float]:
     return calculate_angle(*pts)
 
 
+def get_shoulder_to_wrist_angle(landmarks: dict, side: str = "left") -> Optional[float]:
+    """Shoulder angle: hip → shoulder → wrist."""
+    prefix = side.upper()
+    pts = _get(landmarks, f"{prefix}_HIP", f"{prefix}_SHOULDER", f"{prefix}_WRIST")
+    if pts is None:
+        return None
+    return calculate_angle(*pts)
+
+
 def get_shoulder_angle(landmarks: dict, side: str = "left") -> Optional[float]:
     """
     Shoulder abduction angle: elbow → shoulder → hip.
@@ -105,6 +114,65 @@ def get_hip_angle(landmarks: dict, side: str = "left") -> Optional[float]:
     if pts is None:
         return None
     return calculate_angle(*pts)
+
+
+def get_body_alignment_angle(landmarks: dict) -> Optional[float]:
+    """Body alignment angle using shoulder midpoint, hip midpoint, and ankle midpoint."""
+    required = [
+        "LEFT_SHOULDER",
+        "RIGHT_SHOULDER",
+        "LEFT_HIP",
+        "RIGHT_HIP",
+        "LEFT_ANKLE",
+        "RIGHT_ANKLE",
+    ]
+    if any(k not in landmarks for k in required):
+        return None
+
+    ls, rs = landmarks["LEFT_SHOULDER"], landmarks["RIGHT_SHOULDER"]
+    lh, rh = landmarks["LEFT_HIP"], landmarks["RIGHT_HIP"]
+    la, ra = landmarks["LEFT_ANKLE"], landmarks["RIGHT_ANKLE"]
+
+    mid_shoulder = [(ls[0] + rs[0]) / 2, (ls[1] + rs[1]) / 2]
+    mid_hip = [(lh[0] + rh[0]) / 2, (lh[1] + rh[1]) / 2]
+    mid_ankle = [(la[0] + ra[0]) / 2, (la[1] + ra[1]) / 2]
+    return calculate_angle(mid_shoulder, mid_hip, mid_ankle)
+
+
+def get_foot_spread_ratio(landmarks: dict) -> Optional[float]:
+    """Ankle width divided by shoulder width."""
+    shoulder_width = get_shoulder_width(landmarks)
+    if shoulder_width in (None, 0):
+        return None
+    pts = _get(landmarks, "LEFT_ANKLE", "RIGHT_ANKLE")
+    if pts is None:
+        return None
+    return round(abs(pts[1][0] - pts[0][0]) / shoulder_width, 3)
+
+
+def get_knee_height_ratio(landmarks: dict, side: str = "left") -> Optional[float]:
+    """Knee lift ratio relative to the hip-to-ankle span for one leg."""
+    prefix = side.upper()
+    hip = landmarks.get(f"{prefix}_HIP")
+    knee = landmarks.get(f"{prefix}_KNEE")
+    ankle = landmarks.get(f"{prefix}_ANKLE")
+    if hip is None or knee is None or ankle is None:
+        return None
+
+    denom = ankle[1] - hip[1]
+    if abs(denom) < 1e-8:
+        return None
+    ratio = (ankle[1] - knee[1]) / denom
+    return round(float(ratio), 3)
+
+
+def get_ankle_y(landmarks: dict, side: str = "left") -> Optional[float]:
+    """Return the y-coordinate of the requested ankle."""
+    prefix = side.upper()
+    ankle = landmarks.get(f"{prefix}_ANKLE")
+    if ankle is None:
+        return None
+    return float(ankle[1])
 
 
 def get_torso_angle(landmarks: dict) -> Optional[float]:

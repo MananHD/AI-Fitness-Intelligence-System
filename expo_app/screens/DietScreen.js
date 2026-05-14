@@ -14,6 +14,7 @@ import {
   getProgress, getUserSummary,
 } from '../utils/api';
 import { loadUser, setJourneyComplete } from '../utils/storage';
+import { getSportExercises, EXERCISE_INFO, DIFFICULTY_COLORS, formatSportName } from '../utils/exerciseData';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const DAY_ICONS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -26,42 +27,6 @@ const MEALS = [
 ];
 const W = Dimensions.get('window').width - spacing.md * 4;
 
-const SPORT_EXERCISES = {
-  archery: ['pushup', 'squat', 'jumping_jack'],
-  athletics: ['squat', 'jumping_jack', 'pushup'],
-  badminton: ['squat', 'jumping_jack', 'pushup'],
-  basketball: ['squat', 'jumping_jack', 'pushup'],
-  cricket: ['squat', 'pushup', 'jumping_jack'],
-  field_hockey: ['squat', 'jumping_jack', 'pushup'],
-  football: ['squat', 'jumping_jack', 'pushup'],
-  kabaddi: ['squat', 'pushup', 'jumping_jack'],
-  shooting: ['pushup', 'squat', 'jumping_jack'],
-  volleyball: ['squat', 'jumping_jack', 'pushup'],
-  weightlifting: ['squat', 'pushup', 'jumping_jack'],
-  wrestling: ['squat', 'pushup', 'jumping_jack'],
-};
-
-const EXERCISE_INFO = {
-  squat: {
-    icon: 'S',
-    name: 'Squat',
-    muscles: 'Quads, glutes, hamstrings, core',
-    tip: 'Keep chest tall and knees tracking over toes.',
-  },
-  pushup: {
-    icon: 'P',
-    name: 'Push-up',
-    muscles: 'Chest, triceps, shoulders, core',
-    tip: 'Keep your body straight and lower under control.',
-  },
-  jumping_jack: {
-    icon: 'J',
-    name: 'Jumping Jack',
-    muscles: 'Full body, calves, shoulders, cardio',
-    tip: 'Open fully, land softly, and keep rhythm steady.',
-  },
-};
-
 const chartConfig = {
   backgroundGradientFrom: colors.surface,
   backgroundGradientTo: colors.surface,
@@ -71,7 +36,7 @@ const chartConfig = {
   propsForDots: { r: '4', strokeWidth: '2', stroke: colors.accent },
 };
 
-const sportLabel = sport => String(sport || '').replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
+const sportLabel = sport => formatSportName(sport).replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
 
 const MealCard = ({ name, meal }) => {
   const [open, setOpen] = useState(false);
@@ -92,30 +57,35 @@ const MealCard = ({ name, meal }) => {
 
 const ExerciseCard = ({ exKey, disabled, onStart }) => {
   const info = EXERCISE_INFO[exKey];
+  if (!info) return null;
+  const diffColor = DIFFICULTY_COLORS[info.difficulty] || colors.subtext;
   return (
     <View style={s.exerciseCard}>
       <View style={s.exerciseTop}>
         <View style={s.exerciseIcon}>
-          <Text style={s.exerciseIconTxt}>{info.icon}</Text>
+          <Text style={s.exerciseIconTxt}>{info.name.charAt(0)}</Text>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.exerciseName}>{info.name}</Text>
           <Text style={s.exerciseMeta}>{info.muscles}</Text>
+        </View>
+        <View style={[s.diffBadge, { borderColor: diffColor }]}>
+          <Text style={[s.diffBadgeTxt, { color: diffColor }]}>{info.difficulty}</Text>
         </View>
         <TouchableOpacity
           style={[s.smallAction, disabled && { opacity: 0.5 }]}
           onPress={() => onStart(exKey)}
           disabled={disabled}
         >
-          <Text style={s.smallActionTxt}>Start</Text>
+          <Text style={s.smallActionTxt}>Track</Text>
         </TouchableOpacity>
       </View>
-      <Text style={s.tipText}>{info.tip}</Text>
+      <Text style={s.tipText}>{info.instructions}</Text>
     </View>
   );
 };
 
-export default function DietScreen({ route }) {
+export default function DietScreen({ route, navigation }) {
   const { sport = 'cricket', analysis } = route.params || {};
   const [activeView, setActiveView] = useState('progress');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -201,7 +171,7 @@ export default function DietScreen({ route }) {
     if (activeView === 'progress') loadProgress();
   }, [activeView, loadProgress]);
 
-  const exercises = SPORT_EXERCISES[sport] || ['squat', 'pushup', 'jumping_jack'];
+  const exercises = getSportExercises(sport);
   const dayPlan = weekPlan ? weekPlan[DAYS[activeDay]] : null;
 
   const startExercise = async (exKey) => {
@@ -213,10 +183,12 @@ export default function DietScreen({ route }) {
     setSessionLoading(true);
     try {
       const res = await startSession({ user_id: currentUser.id, exercise: exKey });
-      setSessionId(res.session_id);
-      setActiveExercise(exKey);
-      setReps(0);
-      setStage('Ready');
+      navigation.navigate('ExerciseMonitor', {
+        exerciseKey: exKey,
+        sessionId: res.session_id,
+        sport,
+        analysis,
+      });
     } catch (e) {
       Alert.alert('Session error', e.message);
     } finally {
@@ -392,7 +364,7 @@ export default function DietScreen({ route }) {
       ) : (
         <>
           <Text style={s.sectionTitle}>Exercise Plan</Text>
-          <Text style={s.sectionSub}>Three focused movements for {sportLabel(sport)}.</Text>
+          <Text style={s.sectionSub}>Five focused movements for {sportLabel(sport)}. Tap one to launch live AI monitoring.</Text>
           {exercises.map(ex => (
             <ExerciseCard key={ex} exKey={ex} onStart={startExercise} disabled={sessionLoading} />
           ))}
@@ -402,10 +374,19 @@ export default function DietScreen({ route }) {
               <View key={ex} style={s.orderRow}>
                 <Text style={s.orderNum}>{i + 1}</Text>
                 <Text style={s.orderName}>{EXERCISE_INFO[ex].name}</Text>
-                <Text style={s.orderSets}>3 x 12</Text>
+                <Text style={s.orderSets}>
+                  {EXERCISE_INFO[ex].type === 'timer' ? `${EXERCISE_INFO[ex].target_duration}s` : `3 x ${EXERCISE_INFO[ex].target_reps}`}
+                </Text>
               </View>
             ))}
           </View>
+
+          <TouchableOpacity
+            style={s.trainingBtn}
+            onPress={() => navigation.navigate('Training', { sport, analysis })}
+          >
+            <Text style={s.trainingBtnTxt}>Open Monitored Training</Text>
+          </TouchableOpacity>
         </>
       )}
     </>
@@ -693,6 +674,8 @@ const s = StyleSheet.create({
   exerciseIconTxt: { color: colors.accent, fontWeight: '900', fontSize: font.lg },
   exerciseName: { color: colors.text, fontWeight: '700', fontSize: font.lg },
   exerciseMeta: { color: colors.subtext, fontSize: font.sm, marginTop: 2 },
+  diffBadge: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  diffBadgeTxt: { fontSize: font.xs, fontWeight: '800' },
   tipText: { color: colors.subtext, fontSize: font.md, lineHeight: 20 },
   smallAction: { backgroundColor: colors.accent, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   smallActionTxt: { color: colors.bg, fontWeight: '700' },
@@ -716,6 +699,8 @@ const s = StyleSheet.create({
   orderNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.accent, color: colors.bg, textAlign: 'center', textAlignVertical: 'center', fontWeight: '800', marginRight: spacing.sm },
   orderName: { flex: 1, color: colors.text, fontWeight: '600' },
   orderSets: { color: colors.subtext, fontWeight: '600' },
+  trainingBtn: { backgroundColor: colors.accent, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.md },
+  trainingBtnTxt: { color: colors.bg, fontWeight: '800', fontSize: font.md },
 
   metricsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   metric: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },

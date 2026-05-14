@@ -48,6 +48,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const isComplete = username.trim() && age && height && weight && diet;
+  const s = createStyles(colors);
 
   const handleSave = async () => {
     if (!username.trim()) { Alert.alert('Required', 'Please enter a username'); return; }
@@ -68,8 +69,8 @@ export default function HomeScreen({ navigation }) {
       await saveUser(res.user);
       setSaved(res.user);
       Alert.alert(
-        '✅ Profile Saved',
-        `Welcome, ${res.user.username}! Continuing to Body Analysis.`,
+        'Profile Saved',
+        `Welcome, ${res.user.username}. Continuing to Body Analysis.`,
         [{ text: 'Continue', onPress: () => navigation.navigate('Analysis') }]
       );
     } catch (e) {
@@ -88,15 +89,15 @@ export default function HomeScreen({ navigation }) {
 
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.heroEmoji}>🏋️</Text>
+          <Text style={s.heroKicker}>Profile Setup</Text>
           <Text style={s.heroTitle}>AI Fitness Intelligence</Text>
-          <Text style={s.heroSub}>Fill in your details to get personalised recommendations</Text>
+          <Text style={s.heroSub}>Enter your details to generate personalised recommendations.</Text>
         </View>
 
         {/* Saved profile banner */}
         {saved && (
           <View style={s.activeBanner}>
-            <Text style={s.bannerLabel}>✅ Active Profile</Text>
+            <Text style={s.bannerLabel}>Active Profile</Text>
             <Text style={s.bannerName}>{saved.username}</Text>
             <Text style={s.bannerMeta}>
               {saved.bmi ? `BMI ${saved.bmi.toFixed(1)} · ` : ''}{saved.bmi_category || 'Not yet analysed'}
@@ -108,7 +109,7 @@ export default function HomeScreen({ navigation }) {
 
         {/* Form */}
         <View style={s.formCard}>
-          <Text style={s.formTitle}>Your Profile</Text>
+          <Text style={s.formTitle}>Profile Details</Text>
 
           <Field label="Username *">
             <TextInput
@@ -171,7 +172,7 @@ export default function HomeScreen({ navigation }) {
           <Field label="Gender *">
             <View style={s.chipRow}>
               {['male', 'female'].map(g => (
-                <Chip key={g} label={g === 'male' ? '♂ Male' : '♀ Female'} active={gender === g} onPress={() => setGender(g)} />
+                <Chip key={g} label={g === 'male' ? 'Male' : 'Female'} active={gender === g} onPress={() => setGender(g)} />
               ))}
             </View>
           </Field>
@@ -183,7 +184,7 @@ export default function HomeScreen({ navigation }) {
           >
             {loading
               ? <ActivityIndicator color={colors.bg} />
-              : <Text style={s.saveBtnTxt}>💾 Save &amp; Continue →</Text>}
+              : <Text style={s.saveBtnTxt}>Save and Continue</Text>}
           </TouchableOpacity>
         </View>
 
@@ -195,13 +196,13 @@ export default function HomeScreen({ navigation }) {
 const s = StyleSheet.create({
   container:      { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
   header:         { alignItems: 'center', paddingVertical: spacing.xl },
-  heroEmoji:      { fontSize: 52, marginBottom: spacing.sm },
+  heroKicker:     { fontSize: font.sm, color: colors.accent, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: spacing.xs },
   heroTitle:      { fontSize: font.xxl, fontWeight: '700', color: colors.text, textAlign: 'center' },
   heroSub:        { fontSize: font.md, color: colors.subtext, textAlign: 'center', marginTop: spacing.xs },
 
-  activeBanner:   { backgroundColor: '#0d2b1a', borderRadius: radius.md, padding: spacing.md,
-                    borderWidth: 1, borderColor: colors.accent, marginBottom: spacing.lg },
-  bannerLabel:    { fontSize: font.sm, color: colors.accent, fontWeight: '700' },
+  activeBanner:   { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                    borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+  bannerLabel:    { fontSize: font.sm, color: colors.accent, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
   bannerName:     { fontSize: font.xl, fontWeight: '700', color: colors.text, marginTop: 2 },
   bannerMeta:     { fontSize: font.sm, color: colors.subtext, marginTop: 2 },
 
@@ -229,3 +230,43 @@ const s = StyleSheet.create({
   saveBtnDisabled:{ opacity: 0.6 },
   saveBtnTxt:     { color: colors.bg, fontWeight: '700', fontSize: font.lg },
 });
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container:      { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
+    header:         { alignItems: 'center', paddingVertical: spacing.xl },
+    heroKicker:     { fontSize: font.sm, color: colors.accent, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: spacing.xs },
+    heroTitle:      { fontSize: font.xxl, fontWeight: '700', color: colors.text, textAlign: 'center' },
+    heroSub:        { fontSize: font.md, color: colors.subtext, textAlign: 'center', marginTop: spacing.xs },
+
+    activeBanner:   { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                      borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+    bannerLabel:    { fontSize: font.sm, color: colors.accent, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+    bannerName:     { fontSize: font.xl, fontWeight: '700', color: colors.text, marginTop: 2 },
+    bannerMeta:     { fontSize: font.sm, color: colors.subtext, marginTop: 2 },
+
+
+
+    formCard:       { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                      borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+    formTitle:      { fontSize: font.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
+
+    fieldWrap:      { marginBottom: spacing.md },
+    label:          { fontSize: font.sm, color: colors.subtext, marginBottom: spacing.xs, fontWeight: '600' },
+    input:          { backgroundColor: colors.bg, borderRadius: radius.sm, padding: spacing.md,
+                      color: colors.text, borderWidth: 1, borderColor: colors.border, fontSize: font.md },
+
+    row:            { flexDirection: 'row' },
+    chipRow:        { flexDirection: 'row', gap: spacing.sm },
+    chip:           { flex: 1, backgroundColor: colors.bg, borderRadius: radius.sm, padding: spacing.sm,
+                      alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    chipActive:     { backgroundColor: colors.accent, borderColor: colors.accent },
+    chipTxt:        { color: colors.subtext, fontWeight: '600', fontSize: font.md },
+    chipTxtActive:  { color: colors.bg },
+
+    saveBtn:        { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
+                      alignItems: 'center', marginTop: spacing.md },
+    saveBtnDisabled:{ opacity: 0.6 },
+    saveBtnTxt:     { color: colors.bg, fontWeight: '700', fontSize: font.lg },
+  });
+}

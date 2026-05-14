@@ -1,30 +1,42 @@
 {
-  "name": "expo_app",
+  "name": "sports-assistant",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start --host lan",
-    "android": "expo start --android --host lan",
-    "ios": "expo start --ios --host lan",
-    "web": "expo start --web --host lan"
+    "start": "expo start",
+    "start:lan": "expo start --host lan",
+    "start:local": "expo start --host local",
+    "start:tunnel": "expo start --tunnel",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "preview": "expo preview"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.15.11",
+    "@react-navigation/drawer": "^7.2.7",
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/native-stack": "^7.14.12",
+    "buffer": "^6.0.3",
     "expo": "~54.0.33",
     "expo-camera": "~17.0.10",
+    "expo-constants": "~18.0.13",
     "expo-image-picker": "~17.0.11",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-chart-kit": "^6.12.2",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-reanimated": "4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0"
   },
   "private": true
 }

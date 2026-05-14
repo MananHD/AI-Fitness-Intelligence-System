@@ -37,6 +37,8 @@ export default function ProfileScreen() {
     loadUser().then(u => { if (u) setSaved(u); });
   }, []);
 
+  const s = createStyles(colors);
+
   const handleSave = async () => {
     if (!username.trim()) { Alert.alert('Error', 'Username is required'); return; }
     setLoading(true);
@@ -50,7 +52,7 @@ export default function ProfileScreen() {
       });
       await saveUser(res.user);
       setSaved(res.user);
-      Alert.alert('✅ Saved', `Profile for ${res.user.username} is ready!`);
+      Alert.alert('Saved', `Profile for ${res.user.username} is ready.`);
     } catch (e) {
       Alert.alert('Error', e.message);
     } finally {
@@ -60,7 +62,7 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={s.title}>👤 Your Profile</Text>
+      <Text style={s.title}>Profile</Text>
 
       {saved && (
         <View style={s.savedCard}>
@@ -72,7 +74,7 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      <Text style={s.sectionTitle}>Create / Update Profile</Text>
+      <Text style={s.sectionTitle}>Create or Update Profile</Text>
 
       <Text style={s.label}>Username *</Text>
       <TextInput
@@ -112,34 +114,36 @@ export default function ProfileScreen() {
       <TouchableOpacity style={s.btn} onPress={handleSave} disabled={loading}>
         {loading
           ? <ActivityIndicator color={colors.bg} />
-          : <Text style={s.btnTxt}>💾 Save Profile</Text>}
+          : <Text style={s.btnTxt}>Save Profile</Text>}
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
-  title:        { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.lg },
-  sectionTitle: { fontSize: font.lg, fontWeight: '700', color: colors.text,
-                  marginTop: spacing.lg, marginBottom: spacing.md },
-  savedCard:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
-                  borderWidth: 1, borderColor: colors.accent, marginBottom: spacing.lg },
-  savedLabel:   { fontSize: font.sm, color: colors.accent, fontWeight: '600' },
-  savedName:    { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginTop: 4 },
-  savedMeta:    { fontSize: font.md, color: colors.subtext, marginTop: 4 },
-  label:        { fontSize: font.md, color: colors.subtext, marginBottom: spacing.xs, marginTop: spacing.sm },
-  input:        { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
-                  color: colors.text, borderWidth: 1, borderColor: colors.border, fontSize: font.md },
-  row:          { flexDirection: 'row' },
-  pickerWrap:   { marginTop: spacing.md },
-  pickerRow:    { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
-  chip:         { flex: 1, backgroundColor: colors.surface, borderRadius: radius.sm, padding: spacing.sm,
-                  alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  chipActive:   { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipTxt:      { color: colors.subtext, fontWeight: '600', fontSize: font.md },
-  chipTxtActive:{ color: colors.bg },
-  btn:          { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
-                  alignItems: 'center', marginTop: spacing.xl },
-  btnTxt:       { color: colors.bg, fontWeight: '700', fontSize: font.lg },
-});
+function createStyles(colors) {
+  return StyleSheet.create({
+    container:    { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
+    title:        { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.lg },
+    sectionTitle: { fontSize: font.lg, fontWeight: '700', color: colors.text,
+                    marginTop: spacing.lg, marginBottom: spacing.md },
+    savedCard:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                    borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+    savedLabel:   { fontSize: font.sm, color: colors.accent, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+    savedName:    { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginTop: 4 },
+    savedMeta:    { fontSize: font.md, color: colors.subtext, marginTop: 4 },
+    label:        { fontSize: font.md, color: colors.subtext, marginBottom: spacing.xs, marginTop: spacing.sm },
+    input:        { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                    color: colors.text, borderWidth: 1, borderColor: colors.border, fontSize: font.md },
+    row:          { flexDirection: 'row' },
+    pickerWrap:   { marginTop: spacing.md },
+    pickerRow:    { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+    chip:         { flex: 1, backgroundColor: colors.surface, borderRadius: radius.sm, padding: spacing.sm,
+                    alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    chipActive:   { backgroundColor: colors.accent, borderColor: colors.accent },
+    chipTxt:      { color: colors.subtext, fontWeight: '600', fontSize: font.md },
+    chipTxtActive:{ color: colors.bg },
+    btn:          { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
+                    alignItems: 'center', marginTop: spacing.xl },
+    btnTxt:       { color: colors.bg, fontWeight: '700', fontSize: font.lg },
+  });
+}

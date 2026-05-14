@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routes import router
+from backend.exercise_routes import router as exercise_router
 from database.db_manager import DatabaseManager
 from utils.helpers import load_config, get_logger
 
@@ -50,16 +51,20 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS – allow Streamlit frontend and any local dev origin
+    # CORS – allow mobile Expo Go app, Streamlit frontend, and any local dev origin
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[
+            "*",  # Allow all origins for local network development
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["*"],
     )
 
     app.include_router(router)
+    app.include_router(exercise_router)
     return app
 
 

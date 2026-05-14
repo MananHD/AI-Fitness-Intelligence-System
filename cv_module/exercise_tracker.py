@@ -30,6 +30,17 @@ from cv_module.angle_utils import (
     get_torso_angle,
     get_hip_angle,
 )
+from cv_module.exercises.arm_circles_tracker import ArmCirclesTracker
+from cv_module.exercises.burpee_tracker import BurpeeTracker
+from cv_module.exercises.deep_squat_tracker import DeepSquatTracker
+from cv_module.exercises.forward_bend_tracker import ForwardBendTracker
+from cv_module.exercises.high_knees_tracker import HighKneesTracker
+from cv_module.exercises.jump_squat_tracker import JumpSquatTracker
+from cv_module.exercises.lateral_shuffle_tracker import LateralShuffleTracker
+from cv_module.exercises.lunge_tracker import LungeTracker
+from cv_module.exercises.overhead_throw_tracker import OverheadThrowTracker
+from cv_module.exercises.plank_tracker import PlankTracker
+from cv_module.exercises.shoulder_rotation_tracker import ShoulderRotationTracker
 
 logger = logging.getLogger(__name__)
 _cfg = load_config().get("exercises", {})
@@ -314,9 +325,20 @@ class JumpingJackTracker(_BaseTracker):
 # ─── Factory ──────────────────────────────────────────────────────────────────
 
 TRACKER_MAP: dict[str, type] = {
-    "squat":        SquatTracker,
-    "pushup":       PushupTracker,
+    "squat": SquatTracker,
+    "pushup": PushupTracker,
     "jumping_jack": JumpingJackTracker,
+    "jump_squat": JumpSquatTracker,
+    "deep_squat": DeepSquatTracker,
+    "lunge": LungeTracker,
+    "plank": PlankTracker,
+    "burpee": BurpeeTracker,
+    "high_knees": HighKneesTracker,
+    "lateral_shuffle": LateralShuffleTracker,
+    "arm_circles": ArmCirclesTracker,
+    "shoulder_rotation": ShoulderRotationTracker,
+    "forward_bend": ForwardBendTracker,
+    "overhead_throw": OverheadThrowTracker,
 }
 
 
@@ -325,7 +347,7 @@ def get_tracker(exercise: str) -> _BaseTracker:
     Instantiate a tracker by exercise name.
 
     Args:
-        exercise: One of "squat", "pushup", "jumping_jack".
+        exercise: One of the supported exercise keys.
 
     Returns:
         Configured tracker instance.

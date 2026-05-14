@@ -16,19 +16,6 @@ const MetricBox = ({ label, value, unit }) => (
   </View>
 );
 
-const SportCard = ({ sport }) => (
-  <View style={s.sportCard}>
-    <Text style={s.sportName}>🏅 {sport.sport}</Text>
-    <View style={s.intensityBadge}>
-      <Text style={s.intensityTxt}>{sport.intensity} intensity</Text>
-    </View>
-    <Text style={s.sportRationale}>{sport.rationale}</Text>
-    <Text style={s.sportMeta}>
-      📅 {sport.weekly_sessions}×/week  ·  ⏱ {sport.duration_min} min/session
-    </Text>
-  </View>
-);
-
 export default function BodyAnalysisScreen() {
   const [image, setImage]     = useState(null);
   const [weight, setWeight]   = useState(70);
@@ -36,6 +23,7 @@ export default function BodyAnalysisScreen() {
   const [result, setResult]   = useState(null);
   const [sports, setSports]   = useState([]);
   const [loading, setLoading] = useState(false);
+  const s = createStyles(colors);
 
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -85,23 +73,23 @@ export default function BodyAnalysisScreen() {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Text style={s.title}>📸 Body Analysis</Text>
-      <Text style={s.subtitle}>Take a full-body photo to analyse BMI & body type</Text>
+      <Text style={s.title}>Body Analysis</Text>
+      <Text style={s.subtitle}>Take a full-body photo to analyse BMI and body type.</Text>
 
       {/* Image preview */}
       <View style={s.imageBox}>
         {image
           ? <Image source={{ uri: image.uri }} style={s.image} />
-          : <Text style={s.imagePlaceholder}>📷 No photo yet</Text>}
+          : <Text style={s.imagePlaceholder}>No photo selected</Text>}
       </View>
 
       {/* Camera / Gallery buttons */}
       <View style={s.row}>
         <TouchableOpacity style={s.btn2} onPress={takePhoto}>
-          <Text style={s.btn2Txt}>📷 Camera</Text>
+          <Text style={s.btn2Txt}>Camera</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.btn2} onPress={pickImage}>
-          <Text style={s.btn2Txt}>🖼️ Gallery</Text>
+          <Text style={s.btn2Txt}>Gallery</Text>
         </TouchableOpacity>
       </View>
 
@@ -133,12 +121,12 @@ export default function BodyAnalysisScreen() {
       <TouchableOpacity style={s.analyseBtn} onPress={analyse} disabled={loading}>
         {loading
           ? <ActivityIndicator color={colors.bg} />
-          : <Text style={s.analyseBtnTxt}>🔍 Analyse Body</Text>}
+          : <Text style={s.analyseBtnTxt}>Analyse Body</Text>}
       </TouchableOpacity>
 
       {result && (
         <>
-          <Text style={s.sectionTitle}>📊 Results</Text>
+          <Text style={s.sectionTitle}>Results</Text>
           <View style={s.metricsRow}>
             <MetricBox label="BMI" value={result.bmi_result.bmi.toFixed(1)} unit="" />
             <MetricBox label="Category" value={result.bmi_result.category} unit="" />
@@ -155,13 +143,13 @@ export default function BodyAnalysisScreen() {
             </View>
           )}
           <View style={s.hintCard}>
-            <Text style={s.hintTxt}>💡 {result.recommendations_hint}</Text>
+            <Text style={s.hintTxt}>{result.recommendations_hint}</Text>
           </View>
 
           {sports.length > 0 && (
             <>
-              <Text style={s.sectionTitle}>🏃 Recommended Sports</Text>
-              {sports.map((sp, i) => <SportCard key={i} sport={sp} />)}
+              <Text style={s.sectionTitle}>Recommended Sports</Text>
+              {sports.map((sp, i) => <SportCard key={i} sport={sp} styles={s} />)}
             </>
           )}
         </>
@@ -170,51 +158,66 @@ export default function BodyAnalysisScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
-  title:        { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.xs },
-  subtitle:     { fontSize: font.md, color: colors.subtext, marginBottom: spacing.lg },
-  imageBox:     { height: 220, backgroundColor: colors.surface, borderRadius: radius.lg,
-                  alignItems: 'center', justifyContent: 'center', borderWidth: 1,
-                  borderColor: colors.border, marginBottom: spacing.md, overflow: 'hidden' },
-  image:        { width: '100%', height: '100%' },
-  imagePlaceholder: { fontSize: 40 },
-  row:          { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  btn2:         { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md,
-                  padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  btn2Txt:      { color: colors.text, fontWeight: '600', fontSize: font.md },
-  numBtn:       { backgroundColor: colors.surface, width: 40, height: 40, borderRadius: 20,
-                  alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  numBtnTxt:    { color: colors.text, fontSize: font.xl, fontWeight: '700' },
-  numDisplay:   { flex: 1, alignItems: 'center' },
-  numVal:       { fontSize: font.xl, fontWeight: '700', color: colors.accent },
-  numLabel:     { fontSize: font.sm, color: colors.subtext },
-  analyseBtn:   { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
-                  alignItems: 'center', marginBottom: spacing.lg },
-  analyseBtnTxt:{ color: colors.bg, fontWeight: '700', fontSize: font.lg },
-  sectionTitle: { fontSize: font.xl, fontWeight: '700', color: colors.text,
-                  marginTop: spacing.md, marginBottom: spacing.md },
-  metricsRow:   { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  metric:       { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md,
-                  padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  metricVal:    { fontSize: font.xl, fontWeight: '700', color: colors.accent },
-  metricUnit:   { fontSize: font.sm, color: colors.subtext },
-  metricLabel:  { fontSize: font.sm, color: colors.subtext, marginTop: 2 },
-  infoCard:     { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
-                  marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border,
-                  flexDirection: 'row', justifyContent: 'space-between' },
-  infoLabel:    { color: colors.subtext, fontSize: font.md },
-  infoValue:    { color: colors.text, fontWeight: '600', fontSize: font.md },
-  hintCard:     { backgroundColor: '#1a2e1a', borderRadius: radius.md, padding: spacing.md,
-                  marginBottom: spacing.md, borderWidth: 1, borderColor: colors.accent },
-  hintTxt:      { color: colors.accent, fontSize: font.md },
-  sportCard:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
-                  marginBottom: spacing.sm, borderWidth: 1, borderLeftWidth: 4,
-                  borderColor: colors.border, borderLeftColor: colors.blue },
-  sportName:    { fontSize: font.lg, fontWeight: '600', color: colors.text },
-  intensityBadge:{ backgroundColor: '#1e3a5f', borderRadius: radius.sm, alignSelf: 'flex-start',
-                  paddingHorizontal: spacing.sm, paddingVertical: 2, marginVertical: spacing.xs },
-  intensityTxt: { color: colors.blue, fontSize: font.sm, fontWeight: '600' },
-  sportRationale:{ color: colors.subtext, fontSize: font.md },
-  sportMeta:    { color: colors.border, fontSize: font.sm, marginTop: spacing.xs },
-});
+const SportCard = ({ sport, styles }) => (
+  <View style={styles.sportCard}>
+    <Text style={styles.sportName}>{sport.sport}</Text>
+    <View style={styles.intensityBadge}>
+      <Text style={styles.intensityTxt}>{sport.intensity} intensity</Text>
+    </View>
+    <Text style={styles.sportRationale}>{sport.rationale}</Text>
+    <Text style={styles.sportMeta}>
+      {sport.weekly_sessions} sessions per week  ·  {sport.duration_min} min per session
+    </Text>
+  </View>
+);
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container:    { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
+    title:        { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.xs },
+    subtitle:     { fontSize: font.md, color: colors.subtext, marginBottom: spacing.lg },
+    imageBox:     { height: 220, backgroundColor: colors.surface, borderRadius: radius.lg,
+                    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+                    borderColor: colors.border, marginBottom: spacing.md, overflow: 'hidden' },
+    image:        { width: '100%', height: '100%' },
+    imagePlaceholder: { fontSize: font.md, color: colors.subtext },
+    row:          { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+    btn2:         { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md,
+                    padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    btn2Txt:      { color: colors.text, fontWeight: '600', fontSize: font.md },
+    numBtn:       { backgroundColor: colors.surface, width: 40, height: 40, borderRadius: 20,
+                    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+    numBtnTxt:    { color: colors.text, fontSize: font.xl, fontWeight: '700' },
+    numDisplay:   { flex: 1, alignItems: 'center' },
+    numVal:       { fontSize: font.xl, fontWeight: '700', color: colors.accent },
+    numLabel:     { fontSize: font.sm, color: colors.subtext },
+    analyseBtn:   { backgroundColor: colors.accent, borderRadius: radius.lg, padding: spacing.md,
+                    alignItems: 'center', marginBottom: spacing.lg },
+    analyseBtnTxt:{ color: colors.bg, fontWeight: '700', fontSize: font.lg },
+    sectionTitle: { fontSize: font.xl, fontWeight: '700', color: colors.text,
+                    marginTop: spacing.md, marginBottom: spacing.md },
+    metricsRow:   { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+    metric:       { flex: 1, backgroundColor: colors.surface, borderRadius: radius.md,
+                    padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    metricVal:    { fontSize: font.xl, fontWeight: '700', color: colors.accent },
+    metricUnit:   { fontSize: font.sm, color: colors.subtext },
+    metricLabel:  { fontSize: font.sm, color: colors.subtext, marginTop: 2 },
+    infoCard:     { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                    marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border,
+                    flexDirection: 'row', justifyContent: 'space-between' },
+    infoLabel:    { color: colors.subtext, fontSize: font.md },
+    infoValue:    { color: colors.text, fontWeight: '600', fontSize: font.md },
+    hintCard:     { backgroundColor: colors.surface2, borderRadius: radius.md, padding: spacing.md,
+                    marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border },
+    hintTxt:      { color: colors.text, fontSize: font.md },
+    sportCard:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
+                    marginBottom: spacing.sm, borderWidth: 1, borderLeftWidth: 4,
+                    borderColor: colors.border, borderLeftColor: colors.blue },
+    sportName:    { fontSize: font.lg, fontWeight: '600', color: colors.text },
+    intensityBadge:{ backgroundColor: colors.surface2, borderRadius: radius.sm, alignSelf: 'flex-start',
+                    paddingHorizontal: spacing.sm, paddingVertical: 2, marginVertical: spacing.xs },
+    intensityTxt: { color: colors.blue, fontSize: font.sm, fontWeight: '600' },
+    sportRationale:{ color: colors.subtext, fontSize: font.md },
+    sportMeta:    { color: colors.subtext, fontSize: font.sm, marginTop: spacing.xs },
+  });
+}

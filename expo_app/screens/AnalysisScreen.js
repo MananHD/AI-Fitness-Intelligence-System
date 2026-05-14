@@ -12,10 +12,10 @@ import { colors, spacing, radius, font } from '../utils/theme';
 import { analyzeBody, predictSportPhysical } from '../utils/api';
 import { loadUser, saveUser } from '../utils/storage';
 
-const MetricBox = ({ label, value }) => (
-  <View style={s.metric}>
-    <Text style={s.metricVal}>{value}</Text>
-    <Text style={s.metricLabel}>{label}</Text>
+const MetricBox = ({ label, value, styles }) => (
+  <View style={styles.metric}>
+    <Text style={styles.metricVal}>{value}</Text>
+    <Text style={styles.metricLabel}>{label}</Text>
   </View>
 );
 
@@ -53,28 +53,28 @@ const POSE_LINES = [
 
 const sportLabel = sport => sport.replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
 
-const MatchCard = ({ item, selected, onPress, rank }) => (
-  <TouchableOpacity style={[s.matchCard, selected && s.matchCardSelected]} onPress={onPress}>
-    <View style={s.matchTop}>
-      <Text style={[s.rankPill, rank === 1 && s.rankPillTop]}>{`#${rank}`}</Text>
-      <Text style={[s.matchSport, selected && s.matchSportSelected]}>{sportLabel(item.sport)}</Text>
-      <View style={s.matchScoreBox}>
-        <Text style={[s.matchPct, selected && s.matchPctSelected]}>{item.confidence}%</Text>
-        <Text style={[s.matchPctLabel, selected && s.matchPctSelected]}>confidence</Text>
+const MatchCard = ({ item, selected, onPress, rank, styles }) => (
+  <TouchableOpacity style={[styles.matchCard, selected && styles.matchCardSelected]} onPress={onPress}>
+    <View style={styles.matchTop}>
+      <Text style={[styles.rankPill, rank === 1 && styles.rankPillTop]}>{`#${rank}`}</Text>
+      <Text style={[styles.matchSport, selected && styles.matchSportSelected]}>{sportLabel(item.sport)}</Text>
+      <View style={styles.matchScoreBox}>
+        <Text style={[styles.matchPct, selected && styles.matchPctSelected]}>{item.confidence}%</Text>
+        <Text style={[styles.matchPctLabel, selected && styles.matchPctSelected]}>confidence</Text>
       </View>
     </View>
-    <View style={s.barWrap}>
-      <View style={[s.barFill, { width: `${Math.max(item.confidence, 4)}%` }]} />
+    <View style={styles.barWrap}>
+      <View style={[styles.barFill, { width: `${Math.max(item.confidence, 4)}%` }]} />
     </View>
   </TouchableOpacity>
 );
 
-const PoseOverlay = ({ points }) => {
+const PoseOverlay = ({ points, styles }) => {
   if (!points) return null;
   const isVisible = point => point && (point.visibility ?? 1) >= 0.35;
 
   return (
-    <Svg style={s.poseOverlay} viewBox="0 0 1 1" preserveAspectRatio="none">
+    <Svg style={styles.poseOverlay} viewBox="0 0 1 1" preserveAspectRatio="none">
       {POSE_LINES.map(([from, to]) => {
         const a = points[from];
         const b = points[to];
@@ -120,6 +120,7 @@ export default function AnalysisScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [selectedSport, setSelectedSport] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
+  const s = createStyles(colors);
 
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -206,9 +207,9 @@ export default function AnalysisScreen({ navigation }) {
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 60 }}>
-      <Text style={s.pageTitle}>📸 Physical Sport Analysis</Text>
+      <Text style={s.pageTitle}>Physical Sport Analysis</Text>
       <Text style={s.pageSub}>
-        We extract pose landmarks, compute body ratios (Ape Index, Crural Index, etc.), and compare your profile against trained male/female athlete clusters.
+        We extract pose landmarks, compute body ratios, and compare your profile against trained athlete clusters.
       </Text>
 
       <View style={s.imageBox}>
@@ -216,7 +217,6 @@ export default function AnalysisScreen({ navigation }) {
           ? <Image source={{ uri: image.uri }} style={s.image} />
           : (
             <View style={s.imagePlaceholderBox}>
-              <Text style={s.imagePlaceholderEmoji}>🧍</Text>
               <Text style={s.imagePlaceholderTxt}>Upload a clear full-body image</Text>
             </View>
           )}
@@ -224,25 +224,25 @@ export default function AnalysisScreen({ navigation }) {
 
       <View style={s.btnRow}>
         <TouchableOpacity style={s.photoBtn} onPress={takePhoto}>
-          <Text style={s.photoBtnTxt}>📷 Camera</Text>
+          <Text style={s.photoBtnTxt}>Camera</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.photoBtn} onPress={pickImage}>
-          <Text style={s.photoBtnTxt}>🖼️ Gallery</Text>
+          <Text style={s.photoBtnTxt}>Gallery</Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={[s.analyseBtn, loading && { opacity: 0.6 }]} onPress={analyse} disabled={loading}>
-        {loading ? <ActivityIndicator color={colors.bg} /> : <Text style={s.analyseBtnTxt}>🔍 Run Landmark Analysis</Text>}
+        {loading ? <ActivityIndicator color={colors.bg} /> : <Text style={s.analyseBtnTxt}>Run Landmark Analysis</Text>}
       </TouchableOpacity>
 
       {bodyResult && (
         <>
           <View style={s.divider} />
-          <Text style={s.sectionTitle}>📊 Body Metrics</Text>
+          <Text style={s.sectionTitle}>Body Metrics</Text>
           <View style={s.metricsRow}>
-            <MetricBox label="BMI" value={bodyResult.bmi_result?.bmi?.toFixed(1)} />
-            <MetricBox label="Category" value={bodyResult.bmi_result?.category || '—'} />
-            <MetricBox label="Body Type" value={bodyResult.body_type || '—'} />
+            <MetricBox label="BMI" value={bodyResult.bmi_result?.bmi?.toFixed(1)} styles={s} />
+            <MetricBox label="Category" value={bodyResult.bmi_result?.category || '—'} styles={s} />
+            <MetricBox label="Body Type" value={bodyResult.body_type || '—'} styles={s} />
           </View>
         </>
       )}
@@ -250,7 +250,7 @@ export default function AnalysisScreen({ navigation }) {
       {topMatches.length > 0 && (
         <>
           <View style={s.divider} />
-          <Text style={s.sectionTitle}>🏅 Top 3 Sport Match</Text>
+          <Text style={s.sectionTitle}>Top 3 Sport Match</Text>
           <Text style={s.sectionSub}>
             Hybrid confidence combines height, weight, BMI, body ratios, and model output.
           </Text>
@@ -260,6 +260,7 @@ export default function AnalysisScreen({ navigation }) {
               item={item}
               rank={i + 1}
               selected={selectedSport === item.sport}
+              styles={s}
               onPress={() => setSelectedSport(item.sport)}
             />
           ))}
@@ -267,7 +268,7 @@ export default function AnalysisScreen({ navigation }) {
           <Text style={s.subLabel}>Or choose any sport</Text>
           <TouchableOpacity style={s.allSportsBtn} onPress={() => setShowPicker(true)}>
             <Text style={s.allSportsBtnTxt}>
-              {selectedSport ? `✅ ${sportLabel(selectedSport)}` : '🔍 Browse all sports...'}
+              {selectedSport ? sportLabel(selectedSport) : 'Browse all sports'}
             </Text>
           </TouchableOpacity>
         </>
@@ -276,11 +277,11 @@ export default function AnalysisScreen({ navigation }) {
       {ratios && (
         <>
           <View style={s.divider} />
-          <Text style={s.sectionTitle}>📐 Extracted Biometric Ratios</Text>
+          <Text style={s.sectionTitle}>Extracted Biometric Ratios</Text>
           {image && poseLandmarks && (
             <View style={s.posePreviewBox}>
               <Image source={{ uri: image.uri }} style={s.image} resizeMode="stretch" />
-              <PoseOverlay points={poseLandmarks} />
+              <PoseOverlay points={poseLandmarks} styles={s} />
             </View>
           )}
           {Object.entries(ratios).slice(0, 8).map(([key, val]) => (
@@ -301,7 +302,7 @@ export default function AnalysisScreen({ navigation }) {
       <Modal visible={showPicker} animationType="slide" transparent>
         <View style={s.modalOverlay}>
           <View style={s.modalCard}>
-            <Text style={s.modalTitle}>Choose Any Sport</Text>
+            <Text style={s.modalTitle}>Choose a Sport</Text>
             <FlatList
               data={ALL_SPORTS}
               keyExtractor={item => item}
@@ -328,7 +329,8 @@ export default function AnalysisScreen({ navigation }) {
   );
 }
 
-const s = StyleSheet.create({
+function createStyles(colors) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, padding: spacing.md },
   pageTitle: { fontSize: font.xxl, fontWeight: '700', color: colors.text, marginBottom: spacing.xs },
   pageSub: { fontSize: font.md, color: colors.subtext, marginBottom: spacing.lg, lineHeight: 20 },
@@ -344,7 +346,6 @@ const s = StyleSheet.create({
     overflow: 'hidden', borderWidth: 1, borderColor: colors.border, marginBottom: spacing.md,
   },
   imagePlaceholderBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  imagePlaceholderEmoji: { fontSize: 48, marginBottom: spacing.sm },
   imagePlaceholderTxt: { color: colors.subtext, textAlign: 'center', fontSize: font.md },
 
   btnRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
@@ -376,7 +377,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md,
     marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border,
   },
-  matchCardSelected: { borderColor: colors.accent, backgroundColor: '#0d2b1a' },
+  matchCardSelected: { borderColor: colors.accent, backgroundColor: colors.surface2 },
   matchTop: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   rankPill: {
     backgroundColor: colors.surface2, color: colors.subtext, borderRadius: radius.sm,
@@ -434,4 +435,5 @@ const s = StyleSheet.create({
     alignItems: 'center', marginTop: spacing.md,
   },
   modalCloseTxt: { color: colors.text, fontWeight: '600', fontSize: font.md },
-});
+  });
+}

@@ -1,33 +1,42 @@
 {
   "expo": {
-    "name": "expo_app",
-    "slug": "expo_app",
+    "name": "AI Sports Assistant",
+    "slug": "sports-assistant",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "dark",
+    "plugins": [
+      "expo-image-picker"
+    ],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1a1a1a"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sportsassistant.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "AI Sports Assistant needs access to your camera to monitor exercise form.",
+        "NSMicrophoneUsageDescription": "AI Sports Assistant needs microphone access while recording exercise videos."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1a1a1a"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.sportsassistant.app",
+      "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiHost": "10.201.80.239",
       "apiPort": "8000"
-    }
+    },
+    "scheme": "sportsassistant"
   }
 }
