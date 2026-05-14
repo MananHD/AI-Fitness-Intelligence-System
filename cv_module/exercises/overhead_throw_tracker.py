@@ -19,13 +19,13 @@ _cfg = load_config().get("exercises", {}).get("overhead_throw", {})
 class OverheadThrowTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "WIND"
         self._wind_angle = _cfg.get("wind_angle", 60)
         self._release_angle = _cfg.get("release_angle", 160)
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "WIND"
 
     @property
     def reps(self):
@@ -46,8 +46,8 @@ class OverheadThrowTracker:
         if not available:
             return self._state("Arms not visible", "warning", 0.0, {})
 
-        # Use the arm with the more extreme angle (likely the throwing arm)
-        arm_angle = max(available) if self._stage == "THROW" else min(available)
+        # Use the average angle so either arm can drive the rep count.
+        arm_angle = sum(available) / len(available)
         angles = {"shoulder_wrist": round(arm_angle, 1)}
         confidence = len(available) / 2.0
 

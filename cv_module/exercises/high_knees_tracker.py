@@ -17,7 +17,7 @@ _cfg = load_config().get("exercises", {}).get("high_knees", {})
 class HighKneesTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._lift_ratio = _cfg.get("knee_lift_ratio", 0.85)
         self._last_lifted = None  # "left" or "right"
         self._left_was_up = False
@@ -25,7 +25,7 @@ class HighKneesTracker:
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._last_lifted = None
         self._left_was_up = False
         self._right_was_up = False

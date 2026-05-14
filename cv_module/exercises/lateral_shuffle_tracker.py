@@ -19,14 +19,14 @@ _cfg = load_config().get("exercises", {}).get("lateral_shuffle", {})
 class LateralShuffleTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "NARROW"
         self._spread_out = _cfg.get("spread_ratio_out", 1.5)
         self._spread_in = _cfg.get("spread_ratio_in", 0.8)
         self._went_wide = False
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "NARROW"
         self._went_wide = False
 
     @property

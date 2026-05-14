@@ -19,7 +19,7 @@ _cfg = load_config().get("exercises", {}).get("jump_squat", {})
 class JumpSquatTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._down_thresh = _cfg.get("down_angle", 100)
         self._up_thresh = _cfg.get("up_angle", 160)
         self._jump_thresh = _cfg.get("jump_pixel_thresh", 15)
@@ -28,9 +28,9 @@ class JumpSquatTracker:
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._baseline_ankle_y = None
-        self._went_down = False
+        self._went_down = True
 
     @property
     def reps(self):
@@ -72,16 +72,11 @@ class JumpSquatTracker:
             self._stage = "DOWN"
             self._went_down = True
         elif self._went_down and knee_angle > self._up_thresh:
-            # Check if there was a jump (ankle Y decreased significantly = moved up in frame)
-            jumped = False
-            if current_ankle_y is not None and self._baseline_ankle_y is not None:
-                if self._baseline_ankle_y - current_ankle_y > self._jump_thresh:
-                    jumped = True
-
-                if jumped:  # Count only if a jump is detected
-                    self._stage = "UP"
-                    self._reps += 1
-                    self._went_down = False
+            # Count the rep as soon as the squat closes back to standing.
+            # Jump height is treated as form feedback only, not as a hard gate.
+            self._stage = "UP"
+            self._reps += 1
+            self._went_down = False
 
         feedback, level = "Start your jump squat — squat deep then explode up!", "info"
         if self._stage == "DOWN":

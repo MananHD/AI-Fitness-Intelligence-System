@@ -142,6 +142,7 @@ export default function DietScreen({ route, navigation }) {
       const intensities = ['Moderate', 'High', 'Low', 'Moderate', 'High', 'Low', 'Moderate'];
       const days = {};
       for (let i = 0; i < DAYS.length; i++) {
+        const dayIndex = i * 4;
         const res = await recommendDiet({
           bmi_category: bmiCat,
           sport,
@@ -151,7 +152,7 @@ export default function DietScreen({ route, navigation }) {
           height_cm: currentUser.height_cm || 170,
           age: currentUser.age || 25,
           gender: currentUser.gender || 'male',
-          day_index: i,
+          day_index: dayIndex,
         });
         days[DAYS[i]] = res.meal_plan;
       }

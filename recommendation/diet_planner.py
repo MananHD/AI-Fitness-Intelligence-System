@@ -246,6 +246,7 @@ def _pick_dataset_meal(
     pref: str,
     sport_category: str,
     day_index: int,
+    excluded_names: set[str] | None = None,
 ) -> Meal | None:
     foods = [
         food for food in _load_food_dataset()
@@ -281,7 +282,16 @@ def _pick_dataset_meal(
         scored.append((score, food, scale))
 
     scored.sort(key=lambda item: item[0], reverse=True)
-    pick = scored[day_index % min(len(scored), 12)]
+    excluded = excluded_names or set()
+    pick = None
+    if scored:
+        for offset in range(len(scored)):
+            candidate = scored[(day_index + offset) % len(scored)]
+            if candidate[1].get('food_name') not in excluded:
+                pick = candidate
+                break
+        if pick is None:
+            pick = scored[day_index % min(len(scored), 12)]
     food = pick[1]
     scale = pick[2]
     portion_g = int(max(_to_float(food.get("Serving_Size_g"), 100) * scale, 40))
@@ -316,6 +326,7 @@ def _dataset_meals(
         "dinner": 0.25,
     }
     meals = {}
+    used_names: set[str] = set()
     for offset, (slot, weight) in enumerate(meal_weights.items()):
         meal = _pick_dataset_meal(
             slot,
@@ -325,11 +336,13 @@ def _dataset_meals(
             int(fats_g * weight),
             pref,
             sport_category,
-            day_index + offset,
+            day_index * 5 + offset,
+            excluded_names=used_names,
         )
         if meal is None:
             return None
         meals[slot] = meal
+        used_names.add(meal.name)
     return meals
 
 

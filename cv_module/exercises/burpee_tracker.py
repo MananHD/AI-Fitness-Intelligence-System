@@ -54,7 +54,7 @@ class BurpeeTracker:
 
         is_standing = knee_angle > self._stand_angle
         is_squatting = knee_angle < self._squat_angle
-        is_plank = body_align is not None and body_align > self._plank_angle and knee_angle > self._stand_angle - 20
+        is_plank = body_align is not None and body_align > self._plank_angle and knee_angle > self._stand_angle - 30
 
         # Phase state machine
         if self._phase == 0 and is_standing:
@@ -65,9 +65,9 @@ class BurpeeTracker:
         elif self._phase == 1 and is_plank:
             self._phase = 2
             self._stage = self.PLANK
-        elif self._phase == 2 and is_squatting:
+        elif self._phase in (2, 3) and (is_squatting or is_standing):
             self._phase = 3
-            self._stage = self.SQUAT
+            self._stage = self.SQUAT if is_squatting else self.STAND
         elif self._phase == 3 and is_standing:
             self._reps += 1
             self._phase = 0

@@ -18,14 +18,16 @@ _cfg = load_config().get("exercises", {}).get("arm_circles", {})
 class ArmCirclesTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._arm_straight_min = _cfg.get("arm_straight_min", 140)
+        self._arm_up = _cfg.get("arm_up_angle", 120)
+        self._arm_down = _cfg.get("arm_down_angle", 50)
         self._was_up = False
         self._was_down = False
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._was_up = False
         self._was_down = False
 
@@ -60,17 +62,17 @@ class ArmCirclesTracker:
             if avg_elbow < self._arm_straight_min:
                 arms_straight = False
 
-        # Rotation detection: angle goes high (>140) then low (<40) = half circle
-        if arm_angle > 140:
+        # Rotation detection: relaxed high/low thresholds to tolerate noisy camera input.
+        if arm_angle > self._arm_up:
             self._was_up = True
             self._stage = "UP"
-        elif arm_angle < 40:
+        elif arm_angle < self._arm_down:
             if self._was_up:
                 self._was_down = True
             self._stage = "DOWN"
 
         # Full circle: was up, then was down, now up again
-        if self._was_up and self._was_down and arm_angle > 140:
+        if self._was_up and self._was_down and arm_angle > self._arm_up:
             self._reps += 1
             self._was_up = True
             self._was_down = False

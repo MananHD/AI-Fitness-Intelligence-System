@@ -18,14 +18,14 @@ _cfg = load_config().get("exercises", {}).get("deep_squat", {})
 class DeepSquatTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._down_thresh = _cfg.get("down_angle", 70)
         self._up_thresh = _cfg.get("up_angle", 160)
         self._back_max = _cfg.get("back_angle_max", 50)
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
 
     @property
     def reps(self):

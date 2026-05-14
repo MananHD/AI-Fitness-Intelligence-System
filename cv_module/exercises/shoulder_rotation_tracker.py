@@ -18,13 +18,13 @@ _cfg = load_config().get("exercises", {}).get("shoulder_rotation", {})
 class ShoulderRotationTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._up_thresh = _cfg.get("up_angle", 140)
         self._down_thresh = _cfg.get("down_angle", 40)
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
 
     @property
     def reps(self):

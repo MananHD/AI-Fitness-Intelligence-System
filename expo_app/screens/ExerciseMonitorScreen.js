@@ -7,23 +7,20 @@ import {
   View, Text, TouchableOpacity, StyleSheet, Alert,
   ActivityIndicator, Modal,
 } from 'react-native';
-import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors, spacing, radius, font } from '../utils/theme';
-import { processFrame, processVideo, endSession, resetTracker } from '../utils/api';
+import { processFrame, endSession, resetTracker } from '../utils/api';
 import { setJourneyComplete } from '../utils/storage';
-import { EXERCISE_INFO } from '../utils/exerciseData';
+import { EXERCISE_INFO, getLiveTrackingInterval } from '../utils/exerciseData';
 import PositionGuide from '../components/PositionGuide';
 
 const COUNTDOWN_SECONDS = 3;
-const MAX_RECORDING_SECONDS = 180;
-const LIVE_FRAME_INTERVAL_MS = 2500;
-
 export default function ExerciseMonitorScreen({ route, navigation }) {
   const { exerciseKey, sessionId, sport } = route.params || {};
   const info = EXERCISE_INFO[exerciseKey] || {};
+  const liveFrameIntervalMs = getLiveTrackingInterval(exerciseKey);
 
   const [permission, requestPermission] = useCameraPermissions();
-  const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const cameraRef = useRef(null);
   const countdownRef = useRef(null);
   const recordingLockRef = useRef(false);
@@ -36,7 +33,6 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
   const [cameraFacing, setCameraFacing] = useState('back');
   const [countdown, setCountdown] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [repCount, setRepCount] = useState(0);
   const [currentStage, setCurrentStage] = useState('READY');
@@ -45,6 +41,7 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
   const [correctForm, setCorrectForm] = useState(true);
   const [holdDuration, setHoldDuration] = useState(0);
   const [confidence, setConfidence] = useState(0);
+  const [liveStatus, setLiveStatus] = useState('');
   const [showSummary, setShowSummary] = useState(false);
   const [saving, setSaving] = useState(false);
   const [sessionStats, setSessionStats] = useState({});
@@ -53,10 +50,7 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
     if (!permission?.granted && permission?.canAskAgain) {
       requestPermission();
     }
-    if (!micPermission?.granted && micPermission?.canAskAgain) {
-      requestMicPermission();
-    }
-  }, [permission, micPermission, requestPermission, requestMicPermission]);
+  }, [permission, requestPermission]);
 
   const clearCountdown = useCallback(() => {
     if (countdownRef.current) {
@@ -97,15 +91,19 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
     };
   }, [cleanupTimers]);
 
-  const recordAndAnalyze = useCallback(async () => {
+  const startLiveTracking = useCallback(async () => {
     if (!cameraRef.current || recordingLockRef.current) return;
 
     recordingLockRef.current = true;
     setIsRecording(true);
-    setFeedback('Recording exercise video...');
+    setFeedback('Tracking reps live...');
     setFeedbackLevel('info');
     setCurrentStage('RECORDING');
     setElapsedTime(0);
+    setRepCount(0);
+    setHoldDuration(0);
+    setConfidence(0);
+    setLiveStatus('');
 
     elapsedTimerRef.current = setInterval(() => {
       setElapsedTime((current) => current + 1);
@@ -124,6 +122,7 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
           base64: true,
           quality: 0.3,
           skipProcessing: true,
+          shutterSound: false,
         });
 
         if (!snapshot?.base64) return;
@@ -137,6 +136,7 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
         if (liveResult?.result) {
           const result = liveResult.result;
           setRepCount(result.rep_count || 0);
+          setLiveStatus('');
           setCurrentStage(result.stage || 'UNKNOWN');
           setFeedback(result.feedback || 'Tracking your movement...');
           setFeedbackLevel(result.feedback_level || 'info');
@@ -147,108 +147,14 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
           }
         }
       } catch {
-        // Live updates are best-effort; final analysis still runs after stop.
+        // Keep trying on the next interval if a snapshot fails.
       } finally {
         liveAnalysisBusyRef.current = false;
       }
-    }, LIVE_FRAME_INTERVAL_MS);
+    }, liveFrameIntervalMs);
 
-    let videoUri = null;
-    try {
-      const video = await cameraRef.current.recordAsync({
-        quality: '720p',
-        mute: true,
-      });
-      videoUri = video?.uri || null;
-    } catch (error) {
-      if (String(error?.message || '').toLowerCase().includes('cancel')) {
-        videoUri = null;
-      } else {
-        Alert.alert('Recording error', error.message || 'Unable to record video.');
-      }
-    } finally {
-      clearElapsedTimer();
-      clearLiveAnalysisTimer();
-      setIsRecording(false);
-      recordingLockRef.current = false;
-      clearCountdown();
-
-      if (liveSessionIdRef.current) {
-        try {
-          await resetTracker(liveSessionIdRef.current);
-        } catch {
-          // Best-effort cleanup for live preview tracker state.
-        }
-        liveSessionIdRef.current = null;
-      }
-    }
-
-    if (!videoUri) {
-      setFeedback('Recording stopped before a video was saved.');
-      setFeedbackLevel('warning');
-      setCurrentStage('READY');
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setFeedback('Analyzing your recorded video...');
-    setFeedbackLevel('info');
-
-    try {
-      const filename = videoUri.split('/').pop() || 'exercise.mp4';
-      const response = await processVideo({
-        uri: videoUri,
-        exercise: exerciseKey,
-        sessionId: sessionId || 0,
-        name: filename,
-        type: 'video/mp4',
-      });
-
-      if (response?.result) {
-        const result = response.result;
-        const finalReps = result.rep_count || 0;
-        setRepCount(finalReps);
-        setCurrentStage(result.stage || 'UNKNOWN');
-        setFeedback(result.feedback || 'Video analyzed successfully.');
-        setFeedbackLevel(result.feedback_level || 'info');
-        setCorrectForm(result.correct_form !== false);
-        setConfidence(result.confidence || 0);
-        if (result.hold_duration !== undefined) {
-          setHoldDuration(result.hold_duration);
-        }
-
-        if (sessionId) {
-          await endSession(sessionId, { total_reps: finalReps });
-          try {
-            await resetTracker(sessionId);
-          } catch (cleanupError) {
-            console.warn('Tracker cleanup failed:', cleanupError);
-          }
-        }
-
-        await setJourneyComplete();
-        setSessionStats({
-          exercise: info.name,
-          reps: finalReps,
-          duration: result.video_duration || elapsedTime,
-          holdDuration: result.hold_duration ?? holdDuration,
-          framesSampled: result.frames_sampled || 0,
-        });
-        setShowSummary(true);
-      } else {
-        setFeedback('No analysis result was returned.');
-        setFeedbackLevel('warning');
-        setCurrentStage('READY');
-      }
-    } catch (error) {
-      Alert.alert('Analysis error', error.message || 'Could not analyze the recorded video.');
-      setFeedback('Could not analyze the recorded video.');
-      setFeedbackLevel('error');
-      setCurrentStage('READY');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [clearCountdown, clearElapsedTimer, elapsedTime, exerciseKey, holdDuration, info.name, sessionId]);
+    return null;
+  }, [clearCountdown, clearElapsedTimer, exerciseKey, liveFrameIntervalMs, sessionId]);
 
   const startCountdown = useCallback(() => {
     if (!cameraRef.current || recordingLockRef.current || countdownRef.current) return;
@@ -263,14 +169,14 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
       remaining -= 1;
       if (remaining <= 0) {
         clearCountdown();
-        recordAndAnalyze();
+        startLiveTracking();
         return;
       }
       setCountdown(remaining);
     }, 1000);
-  }, [clearCountdown, recordAndAnalyze]);
+  }, [clearCountdown, startLiveTracking]);
 
-  const handleStop = () => {
+  const handleStop = async () => {
     if (countdownRef.current) {
       clearCountdown();
       setFeedback('Recording canceled before start.');
@@ -278,18 +184,38 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
       return;
     }
 
-    if (isRecording && cameraRef.current) {
-      try {
-        cameraRef.current.stopRecording();
-      } catch {
-        // The recording loop will finish naturally if stopRecording fails.
-      }
+    if (isRecording) {
       clearLiveAnalysisTimer();
+      clearElapsedTimer();
+      recordingLockRef.current = false;
+      setIsRecording(false);
+      setCurrentStage('READY');
+      setFeedback('Live tracking stopped.');
+      setFeedbackLevel('info');
+
+      if (sessionId) {
+        await endSession(sessionId, { total_reps: repCount });
+        try {
+          await resetTracker(sessionId);
+        } catch (cleanupError) {
+          console.warn('Tracker cleanup failed:', cleanupError);
+        }
+      }
+
+      await setJourneyComplete();
+      setSessionStats({
+        exercise: info.name,
+        reps: repCount,
+        duration: elapsedTime,
+        holdDuration,
+        framesSampled: 0,
+      });
+      setShowSummary(true);
     }
   };
 
   const toggleCameraFacing = () => {
-    if (isRecording || isAnalyzing) return;
+    if (isRecording) return;
     setCameraFacing((current) => (current === 'back' ? 'front' : 'back'));
   };
 
@@ -300,11 +226,11 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
   };
 
   const handleStart = () => {
-    if (isRecording || isAnalyzing) return;
+    if (isRecording) return;
     startCountdown();
   };
 
-  if (!permission || !micPermission) {
+  if (!permission) {
     return (
       <View style={s.container}>
         <ActivityIndicator color={colors.accent} size="large" />
@@ -312,25 +238,24 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
     );
   }
 
-  if (!permission.granted || !micPermission.granted) {
+  if (!permission.granted) {
     return (
       <View style={s.container}>
         <View style={s.permCard}>
           <View style={s.permIcon}>
             <Text style={s.permIconTxt}>Camera</Text>
           </View>
-          <Text style={s.permTitle}>Camera and Microphone Access Required</Text>
+          <Text style={s.permTitle}>Camera Access Required</Text>
           <Text style={s.permTxt}>
-            We need camera and microphone access to record a short exercise video and analyze your form.
+            We need camera access to track your reps live while you exercise.
           </Text>
           <TouchableOpacity
             style={s.permBtn}
             onPress={async () => {
               await requestPermission();
-              await requestMicPermission();
             }}
           >
-            <Text style={s.permBtnTxt}>Grant Permissions</Text>
+            <Text style={s.permBtnTxt}>Grant Camera Access</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -352,7 +277,7 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
   const isTimer = info.type === 'timer';
   const displayValue = isTimer ? `${Math.floor(holdDuration)}s` : repCount;
   const displayLabel = isTimer ? 'HOLD TIME' : 'REPS';
-  const showGuide = !isRecording && !isAnalyzing;
+  const showGuide = !isRecording;
 
   return (
     <View style={s.container}>
@@ -360,29 +285,19 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
         ref={cameraRef}
         style={s.camera}
         facing={cameraFacing}
-        mode="video"
+        mode="picture"
         animateShutter={false}
         flash="off"
         onCameraReady={() => setCameraReady(true)}
       >
         <PositionGuide visible={showGuide} />
 
-        <View style={s.topOverlay}>
-          <View style={s.exerciseBadge}>
-            <Text style={s.exerciseBadgeTxt}>{info.name || 'Exercise'}</Text>
-          </View>
-          <View style={s.confidenceBadge}>
-            <View style={[s.confidenceDot, { backgroundColor: confidence > 0.5 ? colors.green : colors.red }]} />
-            <Text style={s.confidenceTxt}>{confidence > 0.5 ? 'Tracking' : 'Waiting'}</Text>
-          </View>
-        </View>
-
         <View style={s.cameraSwitchWrap}>
           <Text style={s.cameraSwitchLabel}>Camera Side</Text>
           <TouchableOpacity
-            style={[s.cameraSwitchBtn, (isRecording || isAnalyzing) && s.cameraSwitchBtnDisabled]}
+            style={[s.cameraSwitchBtn, isRecording && s.cameraSwitchBtnDisabled]}
             onPress={toggleCameraFacing}
-            disabled={isRecording || isAnalyzing}
+            disabled={isRecording}
           >
             <Text style={s.cameraSwitchBtnTxt}>
               {cameraFacing === 'back' ? 'Use Front Camera' : 'Use Back Camera'}
@@ -390,58 +305,59 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        <View style={s.centerOverlay}>
-          <View style={s.liveStatsCard}>
-            <Text style={s.liveStatsLabel}>LIVE {displayLabel}</Text>
-            <Text style={s.liveStatsValue}>{displayValue}</Text>
-          </View>
+        {isRecording ? (
+          <>
+            <View style={s.topOverlayRecording}>
+              <View style={s.exerciseBadge}>
+                <Text style={s.exerciseBadgeTxt}>{info.name || 'Exercise'}</Text>
+              </View>
+              <View style={s.confidenceBadge}>
+                <View style={[s.confidenceDot, { backgroundColor: confidence > 0.5 ? colors.green : colors.red }]} />
+                <Text style={s.confidenceTxt}>{confidence > 0.5 ? 'Tracking' : 'Waiting'}</Text>
+              </View>
+            </View>
 
-          {countdown > 0 ? (
-            <View style={s.countdownBadge}>
-              <Text style={s.countdownTxt}>{countdown}</Text>
-              <Text style={s.countdownSubTxt}>Recording starts soon</Text>
+            <View style={s.centerOverlay}>
+              <View style={s.liveStatsCard}>
+                <Text style={s.liveStatsLabel}>{displayLabel}</Text>
+                <Text style={s.liveStatsValue}>{displayValue}</Text>
+                {liveStatus ? <Text style={s.liveStatsNote}>{liveStatus}</Text> : null}
+              </View>
+
+              <View style={s.statusBadge}>
+                <View style={s.liveDot} />
+                <Text style={s.statusTxt}>Tracking live reps</Text>
+              </View>
             </View>
-          ) : isAnalyzing ? (
-            <View style={s.statusBadge}>
-              <ActivityIndicator color={colors.accent} />
-              <Text style={s.statusTxt}>Analyzing recorded video</Text>
-            </View>
-          ) : isRecording ? (
-            <View style={s.statusBadge}>
-              <View style={s.liveDot} />
-              <Text style={s.statusTxt}>Recording video</Text>
-            </View>
-          ) : (
-            <View style={s.statusBadge}>
-              <Text style={s.statusTxt}>Preparing camera</Text>
-            </View>
-          )}
-        </View>
+          </>
+        ) : null}
 
         <View style={s.bottomOverlay}>
-          <View style={s.stageRow}>
-            <View style={[s.stageBadge, { backgroundColor: stageColor }]}>
-              <Text style={s.stageTxt}>{currentStage}</Text>
-            </View>
-            <Text style={s.timerTxt}>
-              {Math.floor(elapsedTime / 60)}:{String(elapsedTime % 60).padStart(2, '0')}
-            </Text>
-          </View>
-
-          <View style={[s.feedbackBar, { borderColor: feedbackColor }]}>
-            <View style={[s.feedbackDot, { backgroundColor: correctForm ? colors.green : colors.red }]} />
-            <Text style={[s.feedbackTxt, { color: feedbackColor }]}>{currentFeedback}</Text>
-          </View>
-
-          {!isRecording && !isAnalyzing && countdown === 0 ? (
+          {!isRecording ? (
             <TouchableOpacity style={s.startBtn} onPress={handleStart}>
-              <Text style={s.startBtnTxt}>Start Recording</Text>
+              <Text style={s.startBtnTxt}>Start Exercise</Text>
             </TouchableOpacity>
-          ) : null}
+          ) : (
+            <>
+              <View style={s.stageRow}>
+                <View style={[s.stageBadge, { backgroundColor: stageColor }]}>
+                  <Text style={s.stageTxt}>{currentStage}</Text>
+                </View>
+                <Text style={s.timerTxt}>
+                  {Math.floor(elapsedTime / 60)}:{String(elapsedTime % 60).padStart(2, '0')}
+                </Text>
+              </View>
 
-          <TouchableOpacity style={s.stopBtn} onPress={handleStop} disabled={saving || isAnalyzing}>
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.stopBtnTxt}>{countdown > 0 ? 'Cancel' : 'Stop Recording'}</Text>}
-          </TouchableOpacity>
+              <View style={[s.feedbackBar, { borderColor: feedbackColor }]}>
+                <View style={[s.feedbackDot, { backgroundColor: correctForm ? colors.green : colors.red }]} />
+                <Text style={[s.feedbackTxt, { color: feedbackColor }]}>{currentFeedback}</Text>
+              </View>
+
+              <TouchableOpacity style={s.stopBtn} onPress={handleStop} disabled={saving}>
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.stopBtnTxt}>Stop Exercise</Text>}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </CameraView>
 
@@ -482,7 +398,7 @@ export default function ExerciseMonitorScreen({ route, navigation }) {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
-  topOverlay: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingTop: 60, zIndex: 20 },
+  topOverlayRecording: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingTop: 60, zIndex: 20 },
   exerciseBadge: { backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   exerciseBadgeTxt: { color: '#fff', fontWeight: '700', fontSize: font.md },
   confidenceBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
@@ -497,9 +413,7 @@ const s = StyleSheet.create({
   liveStatsCard: { minWidth: 170, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.7)', borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginBottom: spacing.md },
   liveStatsLabel: { color: colors.subtext, fontSize: font.xs, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
   liveStatsValue: { color: '#fff', fontSize: 40, fontWeight: '900', marginTop: 2 },
-  countdownBadge: { alignItems: 'center', justifyContent: 'center', width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(17, 24, 39, 0.72)', borderWidth: 1, borderColor: colors.accent },
-  countdownTxt: { color: '#fff', fontSize: 72, fontWeight: '900' },
-  countdownSubTxt: { color: colors.subtext, fontSize: font.sm, fontWeight: '700' },
+  liveStatsNote: { color: colors.yellow, fontSize: font.xs, fontWeight: '600', marginTop: spacing.xs, textAlign: 'center' },
   statusBadge: { minWidth: 180, minHeight: 140, borderRadius: radius.lg, backgroundColor: 'rgba(17, 24, 39, 0.7)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.lg },
   statusTxt: { color: '#fff', fontSize: font.md, fontWeight: '700', marginTop: spacing.sm, textAlign: 'center' },
   liveDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: '#fff', marginBottom: spacing.sm },

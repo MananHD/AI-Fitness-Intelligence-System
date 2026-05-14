@@ -19,14 +19,14 @@ _cfg = load_config().get("exercises", {}).get("lunge", {})
 class LungeTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._down_thresh = _cfg.get("front_knee_down", 95)
         self._up_thresh = _cfg.get("front_knee_up", 160)
         self._back_max = _cfg.get("back_angle_max", 45)
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
 
     @property
     def reps(self):

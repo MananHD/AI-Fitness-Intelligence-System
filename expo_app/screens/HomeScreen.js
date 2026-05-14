@@ -5,9 +5,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Switch,
 } from 'react-native';
-import { colors, spacing, radius, font } from '../utils/theme';
+import { colors, spacing, radius, font, useTheme } from '../utils/theme';
 import { createUser } from '../utils/api';
 import { saveUser, loadUser } from '../utils/storage';
 
@@ -33,6 +33,8 @@ export default function HomeScreen({ navigation }) {
   const [gender, setGender]     = useState('male');
   const [loading, setLoading]   = useState(false);
   const [saved, setSaved]       = useState(null);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadUser().then(u => { if (u) { setSaved(u); populateFields(u); } });
@@ -47,8 +49,9 @@ export default function HomeScreen({ navigation }) {
     setGender(u.gender || 'male');
   };
 
+  const { theme, mode, toggleTheme } = useTheme();
   const isComplete = username.trim() && age && height && weight && diet;
-  const s = createStyles(colors);
+  const s = createStyles(theme);
 
   const handleSave = async () => {
     if (!username.trim()) { Alert.alert('Required', 'Please enter a username'); return; }
@@ -68,11 +71,10 @@ export default function HomeScreen({ navigation }) {
       });
       await saveUser(res.user);
       setSaved(res.user);
-      Alert.alert(
-        'Profile Saved',
-        `Welcome, ${res.user.username}. Continuing to Body Analysis.`,
-        [{ text: 'Continue', onPress: () => navigation.navigate('Analysis') }]
+      setSuccessMessage(
+        `Nice work, ${res.user.username}! Your fitness profile is all set. Let's move on to body analysis and get your personalised plan started.`
       );
+      setSuccessVisible(true);
     } catch (e) {
       Alert.alert('Error', e.message);
     } finally {
@@ -94,6 +96,7 @@ export default function HomeScreen({ navigation }) {
           <Text style={s.heroSub}>Enter your details to generate personalised recommendations.</Text>
         </View>
 
+        {/* Success message */}
         {/* Saved profile banner */}
         {saved && (
           <View style={s.activeBanner}>
@@ -183,12 +186,40 @@ export default function HomeScreen({ navigation }) {
             disabled={loading}
           >
             {loading
-              ? <ActivityIndicator color={colors.bg} />
+              ? <ActivityIndicator color={theme.bg} />
               : <Text style={s.saveBtnTxt}>Save and Continue</Text>}
           </TouchableOpacity>
         </View>
 
+        <View style={s.themePanel}>
+          <Text style={s.themePanelLabel}>App Theme</Text>
+          <View style={s.themePanelRow}>
+            <Text style={s.themePanelText}>{mode === 'dark' ? 'Dark Mode' : 'Light Mode'}</Text>
+            <Switch
+              value={mode === 'dark'}
+              onValueChange={toggleTheme}
+              trackColor={{ false: theme.border, true: theme.accent }}
+              thumbColor={mode === 'dark' ? theme.bg : theme.surface}
+            />
+          </View>
+        </View>
+
       </ScrollView>
+      {successVisible && (
+        <View style={s.successCard}>
+          <Text style={s.successTitle}>Profile Ready!</Text>
+          <Text style={s.successText}>{successMessage}</Text>
+          <TouchableOpacity
+            style={s.successBtn}
+            onPress={() => {
+              setSuccessVisible(false);
+              navigation.navigate('Analysis');
+            }}
+          >
+            <Text style={s.successBtnTxt}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -229,7 +260,11 @@ const s = StyleSheet.create({
                     alignItems: 'center', marginTop: spacing.md },
   saveBtnDisabled:{ opacity: 0.6 },
   saveBtnTxt:     { color: colors.bg, fontWeight: '700', fontSize: font.lg },
-});
+  themePanel:      { backgroundColor: colors.surface2, borderRadius: radius.lg, padding: spacing.md,
+                    borderWidth: 1, borderColor: colors.border, marginTop: spacing.lg },
+  themePanelLabel: { fontSize: font.sm, color: colors.subtext, marginBottom: spacing.xs, fontWeight: '700' },
+  themePanelRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  themePanelText:  { color: colors.text, fontSize: font.md, fontWeight: '600' },});
 
 function createStyles(colors) {
   return StyleSheet.create({
@@ -253,8 +288,28 @@ function createStyles(colors) {
 
     fieldWrap:      { marginBottom: spacing.md },
     label:          { fontSize: font.sm, color: colors.subtext, marginBottom: spacing.xs, fontWeight: '600' },
-    input:          { backgroundColor: colors.bg, borderRadius: radius.sm, padding: spacing.md,
-                      color: colors.text, borderWidth: 1, borderColor: colors.border, fontSize: font.md },
+    input:          {
+                      backgroundColor: colors.surface2,
+                      borderRadius: radius.lg,
+                      padding: spacing.md,
+                      color: colors.text,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      fontSize: font.md,
+                      shadowColor: '#000',
+                      shadowOpacity: 0.16,
+                      shadowOffset: { width: 0, height: 5 },
+                      shadowRadius: 10,
+                      elevation: 3,
+                    },
+    successCard:    { backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.md,
+                      borderWidth: 1, borderColor: colors.accent, marginHorizontal: spacing.md,
+                      shadowColor: '#000', shadowOpacity: 0.18, shadowOffset: { width: 0, height: 8 }, shadowRadius: 18, elevation: 5,
+                      position: 'absolute', left: spacing.md, right: spacing.md, bottom: spacing.md, zIndex: 10 },
+    successTitle:   { fontSize: font.lg, fontWeight: '700', color: colors.accent, marginBottom: spacing.xs },
+    successText:    { fontSize: font.md, color: colors.text, marginBottom: spacing.sm, lineHeight: 22 },
+    successBtn:     { backgroundColor: colors.accent, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
+    successBtnTxt:  { color: colors.bg, fontWeight: '700', fontSize: font.md },
 
     row:            { flexDirection: 'row' },
     chipRow:        { flexDirection: 'row', gap: spacing.sm },

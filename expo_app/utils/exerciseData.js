@@ -180,6 +180,26 @@ export const EXERCISE_INFO = {
   },
 };
 
+// ─── Live Tracking Cadence ───────────────────────────────────────────────────
+// Smaller numbers mean more frequent frame sampling during live rep tracking.
+export const LIVE_TRACKING_INTERVALS_MS = {
+  squat: 500,
+  deep_squat: 500,
+  lunge: 500,
+  pushup: 500,
+  jump_squat: 350,
+  burpee: 350,
+  high_knees: 300,
+  lateral_shuffle: 350,
+  arm_circles: 400,
+  shoulder_rotation: 400,
+  overhead_throw: 450,
+  forward_bend: 600,
+  plank: 1000,
+};
+
+export const getLiveTrackingInterval = (exerciseKey) => LIVE_TRACKING_INTERVALS_MS[exerciseKey] || 500;
+
 // ─── Difficulty badge colors ────────────────────────────────────────────────
 export const DIFFICULTY_COLORS = {
   'Beginner':     '#22c55e',

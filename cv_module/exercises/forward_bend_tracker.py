@@ -19,13 +19,13 @@ _cfg = load_config().get("exercises", {}).get("forward_bend", {})
 class ForwardBendTracker:
     def __init__(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
         self._down_thresh = _cfg.get("hip_angle_down", 90)
         self._up_thresh = _cfg.get("hip_angle_up", 160)
 
     def reset(self):
         self._reps = 0
-        self._stage = "UNKNOWN"
+        self._stage = "DOWN"
 
     @property
     def reps(self):

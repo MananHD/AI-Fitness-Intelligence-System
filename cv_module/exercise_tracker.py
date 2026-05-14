@@ -72,13 +72,13 @@ class _BaseTracker:
 
     def __init__(self) -> None:
         self._reps: int = 0
-        self._stage: str = Stage.UNKNOWN
+        self._stage: str = Stage.DOWN
         self._last_state = ExerciseState()
 
     def reset(self) -> None:
         """Reset rep counter and stage."""
         self._reps = 0
-        self._stage = Stage.UNKNOWN
+        self._stage = Stage.DOWN
         self._last_state = ExerciseState()
 
     @property

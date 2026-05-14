@@ -28,16 +28,54 @@ mediapipe:
 # ─── Exercise Angle Thresholds ────────────────────────────────────────────────
 exercises:
   squat:
-    down_angle:      90    # knee angle < this → "DOWN" position
-    up_angle:       160    # knee angle > this → "UP"  position
-    back_angle_max:  50    # torso lean max (degrees from vertical)
+    down_angle:      100   # knee angle < this → "DOWN" position
+    up_angle:       155    # knee angle > this → "UP"  position
+    back_angle_max:  55    # torso lean max (degrees from vertical)
   pushup:
-    down_angle:  90
-    up_angle:   160
+    down_angle:  100
+    up_angle:   155
   jumping_jack:
-    arms_up_angle:   150   # shoulder abduction angle when arms are raised
-    arms_down_angle:  40   # shoulder abduction angle when arms are lowered
-    legs_out_ratio:  0.35  # ankle_width / shoulder_width > this → legs spread
+    arms_up_angle:   140   # shoulder abduction angle when arms are raised
+    arms_down_angle:  55   # shoulder abduction angle when arms are lowered
+    legs_out_ratio:  0.30  # ankle_width / shoulder_width > this → legs spread
+  lunge:
+    front_knee_down:  115
+    front_knee_up:    145
+    back_angle_max:   60
+  deep_squat:
+    down_angle:        95
+    up_angle:         145
+    back_angle_max:    60
+  high_knees:
+    knee_lift_ratio:  0.60
+  lateral_shuffle:
+    spread_ratio_out:  1.20
+    spread_ratio_in:   0.95
+  arm_circles:
+    arm_straight_min:  125
+    arm_up_angle:      110
+    arm_down_angle:     60
+  shoulder_rotation:
+    up_angle:          115
+    down_angle:         60
+  forward_bend:
+    hip_angle_down:    110
+    hip_angle_up:      145
+  overhead_throw:
+    wind_angle:         95
+    release_angle:     135
+  burpee:
+    squat_angle:       130
+    plank_angle:       140
+    stand_angle:       145
+  jump_squat:
+    down_angle:        120
+    up_angle:          145
+    jump_pixel_thresh:   6
+  plank:
+    min_body_angle:    145
+    max_hip_sag:       35
+    max_hip_pike:      35
 
 # ─── BMI Thresholds (WHO) ─────────────────────────────────────────────────────
 bmi:
